@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Freelancer Proposal Tracker | Pro SaaS Client & Pipeline Manager</title>
+  <meta name="description" content="Centralized freelance proposal and pipeline management platform for tracking opportunities, clients, deadlines, follow-ups, and performance analytics.">
+  
+  <!-- Inter & JetBrains Mono Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+  <!-- Core Stylesheets -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/responsive.css">
+
+  <!-- Chart.js & Lucide CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- ==================== SIDEBAR ==================== -->
+    <aside class="app-sidebar" id="app-sidebar">
+      <div class="sidebar-header">
+        <a href="#" class="brand-wrapper" onclick="window.app.showView('dashboard'); return false;">
+          <div class="brand-icon-box">
+            <i data-lucide="target" style="width: 20px; height: 20px;"></i>
+          </div>
+          <div class="brand-title-group">
+            <span class="brand-name">ProposalFlow</span>
+            <span class="brand-tagline">Freelance OS</span>
+          </div>
+        </a>
+        <button class="sidebar-toggle-btn" id="btn-toggle-sidebar" title="Toggle Sidebar">
+          <i data-lucide="chevrons-left" style="width: 18px; height: 18px;"></i>
+        </button>
+      </div>
+
+      <nav class="sidebar-nav">
+        <!-- Main Section -->
+        <div>
+          <div class="nav-section-title">Overview</div>
+          <ul class="nav-list">
+            <li class="nav-item">
+              <a href="#dashboard" class="nav-link active" data-view="dashboard">
+                <span class="nav-icon"><i data-lucide="layout-dashboard"></i></span>
+                <span class="nav-label">Dashboard</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="#opportunities" class="nav-link" data-view="opportunities">
+                <span class="nav-icon"><i data-lucide="briefcase"></i></span>
+                <span class="nav-label">Opportunities</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="#proposals" class="nav-link" data-view="proposals">
+                <span class="nav-icon"><i data-lucide="kanban"></i></span>
+                <span class="nav-label">Kanban Pipeline</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Management Section -->
+        <div>
+          <div class="nav-section-title">Management</div>
+          <ul class="nav-list">
+            <li class="nav-item">
+              <a href="#clients" class="nav-link" data-view="clients">
+                <span class="nav-icon"><i data-lucide="users"></i></span>
+                <span class="nav-label">Clients Directory</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="#followups" class="nav-link" data-view="followups">
+                <span class="nav-icon"><i data-lucide="bell-ring"></i></span>
+                <span class="nav-label">Follow-ups</span>
+                <span class="nav-counter alert" id="sidebar-followup-badge">2</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="#calendar" class="nav-link" data-view="calendar">
+                <span class="nav-icon"><i data-lucide="calendar"></i></span>
+                <span class="nav-label">Calendar</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="#notes" class="nav-link" data-view="notes">
+                <span class="nav-icon"><i data-lucide="file-text"></i></span>
+                <span class="nav-label">Client Notes</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Analytics & Settings -->
+        <div>
+          <div class="nav-section-title">Intelligence</div>
+          <ul class="nav-list">
+            <li class="nav-item">
+              <a href="#analytics" class="nav-link" data-view="analytics">
+                <span class="nav-icon"><i data-lucide="pie-chart"></i></span>
+                <span class="nav-label">Analytics & KPIs</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="#settings" class="nav-link" data-view="settings">
+                <span class="nav-icon"><i data-lucide="settings"></i></span>
+                <span class="nav-label">Data & Settings</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user-card">
+          <div class="sidebar-user-avatar">V</div>
+          <div class="sidebar-user-info">
+            <span class="sidebar-user-name">Vardaan</span>
+            <span class="sidebar-user-role">Full-Stack Freelancer</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ==================== MAIN SHELL ==================== -->
+    <main class="app-main">
+      
+      <!-- Topbar Header -->
+      <header class="app-header">
+        <div class="header-left">
+          <button class="mobile-menu-toggle" id="btn-mobile-menu" title="Open Menu">
+            <i data-lucide="menu"></i>
+          </button>
+
+          <!-- Global Omnisearch -->
+          <div class="header-search-box">
+            <i data-lucide="search" class="header-search-icon" style="width: 16px; height: 16px;"></i>
+            <input type="text" class="header-search-input" id="global-search-input" placeholder="Search opportunities, clients, notes (Press Ctrl+K)..." autocomplete="off">
+            <span class="search-shortcut-badge">Ctrl K</span>
+
+            <!-- Dropdown Search Results -->
+            <div class="search-results-dropdown" id="global-search-dropdown"></div>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <!-- Quick Add Button -->
+          <button class="quick-action-dropdown-btn" onclick="window.opportunities.openCreateModal()">
+            <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+            <span class="quick-action-text">New Proposal</span>
+          </button>
+
+          <!-- Theme Switcher -->
+          <button class="header-action-btn" id="btn-toggle-theme" title="Toggle Dark/Light Mode">
+            <i data-lucide="moon" id="theme-toggle-icon" style="width: 18px; height: 18px;"></i>
+          </button>
+
+          <!-- Notification Bell -->
+          <div class="notification-wrapper" style="position: relative;">
+            <button class="header-action-btn" id="btn-notification-bell" title="Notifications & Deadlines">
+              <i data-lucide="bell" style="width: 18px; height: 18px;"></i>
+              <span class="notification-badge-dot" id="notification-bell-dot"></span>
+            </button>
+
+            <!-- Dropdown Notification Panel -->
+            <div class="notification-panel" id="notification-panel">
+              <div class="notification-header">
+                <span class="notification-title">Follow-up Alerts & Deadlines</span>
+                <button class="btn btn-outline btn-sm" onclick="window.app.showView('followups'); window.app.closeNotificationPanel();">View All</button>
+              </div>
+              <div class="notification-list" id="notification-list"></div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Dynamic View Container -->
+      <div class="app-content">
+
+        <!-- ==================== VIEW 1: DASHBOARD ==================== -->
+        <section class="view-section active" id="view-dashboard">
+          <div class="page-header">
+            <div class="page-title-group">
+              <h1 class="page-title">Executive Dashboard</h1>
+              <p class="page-subtitle">Real-time freelance pipeline performance, active bids and revenue forecast.</p>
+            </div>
+            <div class="page-actions-group">
+              <button class="btn btn-outline" onclick="window.storage.exportToCSV('proposals')">
+                <i data-lucide="download"></i> Export CSV
+              </button>
+              <button class="btn btn-primary" onclick="window.opportunities.openCreateModal()">
+                <i data-lucide="plus-circle"></i> Add Opportunity
+              </button>
+            </div>
+          </div>
+
+          <!-- KPI Metric Cards Grid -->
+          <div class="metrics-grid">
+            <div class="stat-card">
+              <div class="stat-card-top">
+                <span class="stat-title">Total Opportunities</span>
+                <div class="stat-icon-wrapper stat-icon-primary">
+                  <i data-lucide="briefcase"></i>
+                </div>
+              </div>
+              <div class="stat-value" id="metric-total-opps">0</div>
+              <div class="stat-subtext">Discovered & tracked bids</div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-card-top">
+                <span class="stat-title">Estimated Pipeline</span>
+                <div class="stat-icon-wrapper stat-icon-purple">
+                  <i data-lucide="trending-up"></i>
+                </div>
+              </div>
+              <div class="stat-value" id="metric-pipeline-val">$0</div>
+              <div class="stat-subtext">Active unclosed opportunities</div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-card-top">
+                <span class="stat-title">Won Earnings</span>
+                <div class="stat-icon-wrapper stat-icon-success">
+                  <i data-lucide="dollar-sign"></i>
+                </div>
+              </div>
+              <div class="stat-value" id="metric-actual-earnings">$0</div>
+              <div class="stat-subtext">Accepted proposal revenue</div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-card-top">
+                <span class="stat-title">Proposal Win Rate</span>
+                <div class="stat-icon-wrapper stat-icon-warning">
+                  <i data-lucide="award"></i>
+                </div>
+              </div>
+              <div class="stat-value" id="metric-win-rate">0%</div>
+              <div class="stat-subtext">Won vs lost conversion</div>
+            </div>
+          </div>
+
+          <!-- Secondary Metric Mini Row -->
+          <div class="metrics-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: var(--space-8);">
+            <div class="stat-card" style="padding: var(--space-4);">
+              <span class="stat-title" style="font-size: 0.75rem;">Submitted</span>
+              <div class="stat-value" style="font-size: 1.5rem; margin-top: 4px;" id="metric-submitted">0</div>
+            </div>
+            <div class="stat-card" style="padding: var(--space-4);">
+              <span class="stat-title" style="font-size: 0.75rem;">Under Review / Interview</span>
+              <div class="stat-value" style="font-size: 1.5rem; margin-top: 4px; color: var(--warning-600);" id="metric-pending">0</div>
+            </div>
+            <div class="stat-card" style="padding: var(--space-4);">
+              <span class="stat-title" style="font-size: 0.75rem;">Accepted Deals</span>
+              <div class="stat-value" style="font-size: 1.5rem; margin-top: 4px; color: var(--success-600);" id="metric-accepted">0</div>
+            </div>
+            <div class="stat-card" style="padding: var(--space-4);">
+              <span class="stat-title" style="font-size: 0.75rem;">Rejected / Withdrawn</span>
+              <div class="stat-value" style="font-size: 1.5rem; margin-top: 4px; color: var(--danger-600);" id="metric-rejected">0</div>
+            </div>
+            <div class="stat-card" style="padding: var(--space-4);">
+              <span class="stat-title" style="font-size: 0.75rem;">Pending Follow-ups</span>
+              <div class="stat-value" style="font-size: 1.5rem; margin-top: 4px; color: var(--primary-600);" id="metric-followups">0</div>
+            </div>
+          </div>
+
+          <!-- Row 1: Charts Grid -->
+          <div class="charts-grid-2col">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <h3 class="card-title"><i data-lucide="bar-chart-2" style="width: 18px; height: 18px; color: var(--primary-600);"></i> Monthly Proposal Submissions</h3>
+                  <p class="card-subtitle">Volume of proposals sent over the past 6 months</p>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="chart-container-box">
+                  <canvas id="chart-monthly-submissions"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <h3 class="card-title"><i data-lucide="pie-chart" style="width: 18px; height: 18px; color: var(--success-600);"></i> Proposal Status Breakdown</h3>
+                  <p class="card-subtitle">Distribution of proposals across lifecycle stages</p>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="chart-container-box">
+                  <canvas id="chart-status-distribution"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 2: Charts Grid -->
+          <div class="charts-grid-2col">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <h3 class="card-title"><i data-lucide="layers" style="width: 18px; height: 18px; color: var(--info-600);"></i> Opportunities by Platform / Source</h3>
+                  <p class="card-subtitle">Where freelance leads originate</p>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="chart-container-box">
+                  <canvas id="chart-platform-distribution"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <h3 class="card-title"><i data-lucide="trending-up" style="width: 18px; height: 18px; color: var(--purple-600);"></i> Monthly Pipeline vs Realized Earnings</h3>
+                  <p class="card-subtitle">Comparison of active pipeline value to actual won cash</p>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="chart-container-box">
+                  <canvas id="chart-financials"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 3: Widgets Grid (Upcoming Deadlines, Follow-up Alerts, Recent Activities) -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--space-6); margin-bottom: var(--space-8);">
+            
+            <!-- Upcoming Deadlines -->
+            <div class="card" style="margin-bottom: 0;">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <h3 class="card-title"><i data-lucide="clock" style="width: 18px; height: 18px; color: var(--danger-500);"></i> Upcoming Deadlines</h3>
+                  <p class="card-subtitle">Approaching proposal submission cut-offs</p>
+                </div>
+                <button class="btn btn-outline btn-sm" onclick="window.app.showView('calendar')">Calendar</button>
+              </div>
+              <div class="card-body" id="dashboard-upcoming-deadlines" style="padding-top: var(--space-2);"></div>
+            </div>
+
+            <!-- Follow-up Alerts -->
+            <div class="card" style="margin-bottom: 0;">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <h3 class="card-title"><i data-lucide="bell" style="width: 18px; height: 18px; color: var(--warning-500);"></i> Follow-up Reminders</h3>
+                  <p class="card-subtitle">Urgent check-ins and client touchpoints</p>
+                </div>
+                <button class="btn btn-outline btn-sm" onclick="window.app.showView('followups')">Manage</button>
+              </div>
+              <div class="card-body" id="dashboard-followup-alerts" style="padding-top: var(--space-2);"></div>
+            </div>
+
+            <!-- Recent Activity Feed -->
+            <div class="card" style="margin-bottom: 0;">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <h3 class="card-title"><i data-lucide="activity" style="width: 18px; height: 18px; color: var(--primary-600);"></i> Activity Audit Trail</h3>
+                  <p class="card-subtitle">Latest lifecycle actions logged</p>
+                </div>
+              </div>
+              <div class="card-body" id="dashboard-recent-activities" style="padding-top: var(--space-2);"></div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ==================== VIEW 2: OPPORTUNITIES (TABLE) ==================== -->
+        <section class="view-section" id="view-opportunities">
+          <div class="page-header">
+            <div class="page-title-group">
+              <h1 class="page-title">Opportunity Directory</h1>
+              <p class="page-subtitle">Track, filter, and manage all your discovered freelance project opportunities.</p>
+            </div>
+            <div class="page-actions-group">
+              <button class="btn btn-outline" onclick="window.proposals.setViewMode('kanban'); window.app.showView('proposals');">
+                <i data-lucide="kanban"></i> Switch to Kanban
+              </button>
+              <button class="btn btn-primary" onclick="window.opportunities.openCreateModal()">
+                <i data-lucide="plus"></i> Add Opportunity
+              </button>
+            </div>
+          </div>
+
+          <!-- Filter & Search Toolbar -->
+          <div class="toolbar-container">
+            <div class="toolbar-left">
+              <div class="filter-input-search">
+                <i data-lucide="search" class="filter-search-icon" style="width: 16px; height: 16px;"></i>
+                <input type="text" id="opps-search-input" placeholder="Search by title, client, or description...">
+              </div>
+
+              <select class="filter-select" id="opps-filter-status">
+                <option value="ALL">All Statuses</option>
+                <option value="Draft">Draft</option>
+                <option value="Ready to Submit">Ready to Submit</option>
+                <option value="Submitted">Submitted</option>
+                <option value="Under Review">Under Review</option>
+                <option value="Interview">Interview</option>
+                <option value="Negotiation">Negotiation</option>
+                <option value="Accepted">Accepted (Won)</option>
+                <option value="Rejected">Rejected</option>
+                <option value="Withdrawn">Withdrawn</option>
+              </select>
+
+              <select class="filter-select" id="opps-filter-platform">
+                <option value="ALL">All Platforms</option>
+                <option value="Upwork">Upwork</option>
+                <option value="LinkedIn">LinkedIn</option>
+                <option value="Direct Outreach">Direct Outreach</option>
+                <option value="Referral">Referral</option>
+                <option value="Contra">Contra</option>
+                <option value="Fiverr Pro">Fiverr Pro</option>
+                <option value="Twitter/X">Twitter/X</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <div class="toolbar-right">
+              <select class="filter-select" id="opps-sort-select">
+                <option value="dateDiscovered-desc">Discovered: Newest First</option>
+                <option value="dateDiscovered-asc">Discovered: Oldest First</option>
+                <option value="value-desc">Value: High to Low</option>
+                <option value="value-asc">Value: Low to High</option>
+                <option value="deadline-asc">Deadline: Earliest First</option>
+                <option value="title-asc">Title: A-Z</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Opportunities Table -->
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Project Title & Scope</th>
+                  <th>Client</th>
+                  <th>Platform</th>
+                  <th>Est. Value</th>
+                  <th>Deadline</th>
+                  <th>Lifecycle Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="opportunities-table-body"></tbody>
+            </table>
+          </div>
+
+          <div class="empty-state" id="opportunities-empty-state" style="display: none;">
+            <div class="empty-state-icon"><i data-lucide="briefcase"></i></div>
+            <div class="empty-state-title">No opportunities found</div>
+            <p class="empty-state-desc">Try clearing your filters or create a new freelance proposal opportunity.</p>
+            <button class="btn btn-primary" onclick="window.opportunities.openCreateModal()">Create Opportunity</button>
+          </div>
+        </section>
+
+        <!-- ==================== VIEW 3: PROPOSALS (KANBAN PIPELINE) ==================== -->
+        <section class="view-section" id="view-proposals">
+          <div class="page-header">
+            <div class="page-title-group">
+              <h1 class="page-title">Proposals Kanban Pipeline</h1>
+              <p class="page-subtitle">Visual drag-and-drop workflow tracking opportunities from initial discovery to closed-won.</p>
+            </div>
+            <div class="page-actions-group">
+              <div class="btn-group">
+                <button class="btn btn-primary btn-sm" id="btn-view-kanban" onclick="window.proposals.setViewMode('kanban')">
+                  <i data-lucide="kanban" style="width: 14px; height: 14px;"></i> Kanban
+                </button>
+                <button class="btn btn-outline btn-sm" id="btn-view-table" onclick="window.proposals.setViewMode('table')">
+                  <i data-lucide="table" style="width: 14px; height: 14px;"></i> Table
+                </button>
+              </div>
+              <button class="btn btn-primary" onclick="window.opportunities.openCreateModal()">
+                <i data-lucide="plus"></i> New Proposal
+              </button>
+            </div>
+          </div>
+
+          <!-- Kanban Toolbar -->
+          <div class="toolbar-container" style="margin-bottom: var(--space-4);">
+            <div class="toolbar-left">
+              <div class="filter-input-search">
+                <i data-lucide="search" class="filter-search-icon" style="width: 16px; height: 16px;"></i>
+                <input type="text" id="kanban-search-input" placeholder="Filter cards by title or client...">
+              </div>
+              <select class="filter-select" id="kanban-filter-platform">
+                <option value="ALL">All Platforms</option>
+                <option value="Upwork">Upwork</option>
+                <option value="LinkedIn">LinkedIn</option>
+                <option value="Direct Outreach">Direct Outreach</option>
+                <option value="Referral">Referral</option>
+                <option value="Contra">Contra</option>
+                <option value="Fiverr Pro">Fiverr Pro</option>
+                <option value="Twitter/X">Twitter/X</option>
+              </select>
+            </div>
+            <div class="toolbar-right">
+              <span style="font-size: 0.8125rem; color: var(--text-muted);"><i data-lucide="move" style="width: 14px; height: 14px;"></i> Drag cards between columns to update status</span>
+            </div>
+          </div>
+
+          <!-- Kanban View Body -->
+          <div id="proposals-kanban-view" class="kanban-view-container">
+            <div class="kanban-view-container" id="proposals-kanban-board" style="width: 100%; min-height: 550px;"></div>
+          </div>
+
+          <!-- Secondary Table fallback in this view -->
+          <div id="proposals-table-view" style="display: none;">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Client</th>
+                    <th>Platform</th>
+                    <th>Value</th>
+                    <th>Deadline</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="proposals-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== VIEW 4: CLIENTS ==================== -->
+        <section class="view-section" id="view-clients">
+          <div class="page-header">
+            <div class="page-title-group">
+              <h1 class="page-title">Client Directory</h1>
+              <p class="page-subtitle">Manage client organizations, key contact personnel, and track lifetime proposal value.</p>
+            </div>
+            <div class="page-actions-group">
+              <button class="btn btn-outline" onclick="window.storage.exportToCSV('clients')">
+                <i data-lucide="download"></i> Export Clients
+              </button>
+              <button class="btn btn-primary" onclick="window.clients.openCreateModal()">
+                <i data-lucide="user-plus"></i> Add Client
+              </button>
+            </div>
+          </div>
+
+          <!-- Filter Toolbar -->
+          <div class="toolbar-container">
+            <div class="toolbar-left">
+              <div class="filter-input-search">
+                <i data-lucide="search" class="filter-search-icon" style="width: 16px; height: 16px;"></i>
+                <input type="text" id="clients-search-input" placeholder="Search client company, contact, or email...">
+              </div>
+
+              <select class="filter-select" id="clients-filter-industry">
+                <option value="ALL">All Industries</option>
+                <option value="FinTech / Banking">FinTech / Banking</option>
+                <option value="Healthcare / SaaS">Healthcare / SaaS</option>
+                <option value="DevOps / Cloud Services">DevOps / Cloud Services</option>
+                <option value="Design & E-Commerce">Design & E-Commerce</option>
+                <option value="Artificial Intelligence">Artificial Intelligence</option>
+                <option value="Supply Chain & Logistics">Supply Chain & Logistics</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Client Cards Grid -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: var(--space-6);" id="clients-cards-grid"></div>
+
+          <div class="empty-state" id="clients-empty-state" style="display: none;">
+            <div class="empty-state-icon"><i data-lucide="users"></i></div>
+            <div class="empty-state-title">No clients found</div>
+            <p class="empty-state-desc">You haven't added any clients yet or no records match your filter.</p>
+            <button class="btn btn-primary" onclick="window.clients.openCreateModal()">Add First Client</button>
+          </div>
+        </section>
+
+        <!-- ==================== VIEW 5: FOLLOW-UPS ==================== -->
+        <section class="view-section" id="view-followups">
+          <div class="page-header">
+            <div class="page-title-group">
+              <h1 class="page-title">Follow-up Management</h1>
+              <p class="page-subtitle">Never lose an opportunity to radio silence. Schedule, track and complete follow-up reminders.</p>
+            </div>
+            <div class="page-actions-group">
+              <button class="btn btn-primary" onclick="window.followups.openCreateModal()">
+                <i data-lucide="bell"></i> Schedule Reminder
+              </button>
+            </div>
+          </div>
+
+          <!-- Tabs for Follow-up Categories -->
+          <div style="display: flex; gap: var(--space-2); margin-bottom: var(--space-6); border-bottom: 1px solid var(--border-color); padding-bottom: var(--space-2); overflow-x: auto;">
+            <button class="btn btn-secondary followup-tab-btn active" data-tab="today" style="border-radius: var(--radius-full);">
+              Today's Reminders (<span id="tab-count-today">0</span>)
+            </button>
+            <button class="btn btn-secondary followup-tab-btn" data-tab="upcoming" style="border-radius: var(--radius-full);">
+              Upcoming (<span id="tab-count-upcoming">0</span>)
+            </button>
+            <button class="btn btn-secondary followup-tab-btn" data-tab="overdue" style="border-radius: var(--radius-full);">
+              Overdue (<span id="tab-count-overdue">0</span>)
+            </button>
+            <button class="btn btn-secondary followup-tab-btn" data-tab="completed" style="border-radius: var(--radius-full);">
+              Completed (<span id="tab-count-completed">0</span>)
+            </button>
+          </div>
+
+          <div id="followups-list-container"></div>
+
+          <div class="empty-state" id="followups-empty-state" style="display: none;">
+            <div class="empty-state-icon"><i data-lucide="check-circle-2"></i></div>
+            <div class="empty-state-title">No reminders in this tab</div>
+            <p class="empty-state-desc">You are completely up to date with your follow-up tasks for this category!</p>
+            <button class="btn btn-primary" onclick="window.followups.openCreateModal()">Schedule Follow-up</button>
+          </div>
+        </section>
+
+        <!-- ==================== VIEW 6: CALENDAR ==================== -->
+        <section class="view-section" id="view-calendar">
+          <div class="page-header">
+            <div class="page-title-group">
+              <h1 class="page-title">Interactive Deadline Calendar</h1>
+              <p class="page-subtitle">Monthly visual schedule of proposal deadlines, client follow-up dates, and submission milestones.</p>
+            </div>
+            <div class="page-actions-group">
+              <div class="calendar-nav-controls">
+                <button class="btn btn-secondary btn-icon-only" id="cal-prev-month" title="Previous Month">
+                  <i data-lucide="chevron-left"></i>
+                </button>
+                <button class="btn btn-outline btn-sm" id="cal-today-btn">Today</button>
+                <button class="btn btn-secondary btn-icon-only" id="cal-next-month" title="Next Month">
+                  <i data-lucide="chevron-right"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="calendar-wrapper">
+            <div class="calendar-top-bar">
+              <h2 class="calendar-month-year" id="cal-month-title">November 2026</h2>
+              <div style="display: flex; gap: var(--space-4); font-size: 0.75rem; font-weight: 600;">
+                <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; background: var(--danger-500); border-radius: 50%;"></span> Application Deadline</span>
+                <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; background: var(--primary-500); border-radius: 50%;"></span> Submitted Proposal</span>
+                <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; background: var(--purple-500); border-radius: 50%;"></span> Follow-up Reminder</span>
+              </div>
+            </div>
+
+            <div class="calendar-weekdays-row">
+              <div>Sun</div>
+              <div>Mon</div>
+              <div>Tue</div>
+              <div>Wed</div>
+              <div>Thu</div>
+              <div>Fri</div>
+              <div>Sat</div>
+            </div>
+
+            <div class="calendar-grid" id="calendar-grid-cells"></div>
+          </div>
+        </section>
+
+        <!-- ==================== VIEW 7: NOTES ==================== -->
+        <section class="view-section" id="view-notes">
+          <div class="page-header">
+            <div class="page-title-group">
+              <h1 class="page-title">Client & Proposal Notes</h1>
+              <p class="page-subtitle">Repository of meeting briefs, technical specs, cover letter templates and discovery insights.</p>
+            </div>
+            <div class="page-actions-group">
+              <button class="btn btn-primary" onclick="window.notes.openCreateModal()">
+                <i data-lucide="plus"></i> Create Note
+              </button>
+            </div>
+          </div>
+
+          <div class="toolbar-container">
+            <div class="toolbar-left">
+              <div class="filter-input-search">
+                <i data-lucide="search" class="filter-search-icon" style="width: 16px; height: 16px;"></i>
+                <input type="text" id="notes-search-input" placeholder="Search notes by title, tags or content...">
+              </div>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: var(--space-6);" id="notes-cards-grid"></div>
+
+          <div class="empty-state" id="notes-empty-state" style="display: none;">
+            <div class="empty-state-icon"><i data-lucide="file-text"></i></div>
+            <div class="empty-state-title">No notes found</div>
+            <p class="empty-state-desc">Capture important requirements, technical pointers, or interview debriefs.</p>
+            <button class="btn btn-primary" onclick="window.notes.openCreateModal()">Add Note</button>
+          </div>
+        </section>
+
+        <!-- ==================== VIEW 8: ANALYTICS ==================== -->
+        <section class="view-section" id="view-analytics">
+          <div class="page-header">
+            <div class="page-title-group">
+              <h1 class="page-title">Freelance Performance Analytics</h1>
+              <p class="page-subtitle">Comprehensive metrics on win rates, platform conversion rates, and revenue generation.</p>
+            </div>
+            <div class="page-actions-group">
+              <button class="btn btn-outline" onclick="window.storage.exportToCSV('proposals')">
+                <i data-lucide="download"></i> Export Analytics Data
+              </button>
+            </div>
+          </div>
+
+          <!-- Deep Analytics KPIs -->
+          <div class="metrics-grid">
+            <div class="stat-card">
+              <span class="stat-title">Proposal Win Rate</span>
+              <div class="stat-value" id="analytics-kpi-win-rate" style="color: var(--success-600);">0%</div>
+              <div class="stat-subtext">Won deals out of decided bids</div>
+            </div>
+
+            <div class="stat-card">
+              <span class="stat-title">Rejection Rate</span>
+              <div class="stat-value" id="analytics-kpi-rejection-rate" style="color: var(--danger-600);">0%</div>
+              <div class="stat-subtext">Unsuccessful proposals</div>
+            </div>
+
+            <div class="stat-card">
+              <span class="stat-title">Avg Proposal Value</span>
+              <div class="stat-value" id="analytics-kpi-avg-value">$0</div>
+              <div class="stat-subtext">Mean deal size across pipeline</div>
+            </div>
+
+            <div class="stat-card">
+              <span class="stat-title">Avg Won Deal Size</span>
+              <div class="stat-value" id="analytics-kpi-avg-won" style="color: var(--primary-600);">$0</div>
+              <div class="stat-subtext">Average earnings per accepted project</div>
+            </div>
+          </div>
+
+          <!-- Analytics Charts -->
+          <div class="charts-grid-2col">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <h3 class="card-title"><i data-lucide="bar-chart" style="width: 18px; height: 18px; color: var(--success-600);"></i> Realized Earnings by Platform ($)</h3>
+                  <p class="card-subtitle">Total cash won broken down by freelance marketplace & outreach channel</p>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="chart-container-box">
+                  <canvas id="chart-analytics-platform"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <h3 class="card-title"><i data-lucide="pie-chart" style="width: 18px; height: 18px; color: var(--primary-600);"></i> Deal Win / Loss / In-Progress Ratio</h3>
+                  <p class="card-subtitle">Lifetime outcome ratio of all entered opportunities</p>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="chart-container-box">
+                  <canvas id="chart-analytics-winloss"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Platform Performance Table -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <h3 class="card-title"><i data-lucide="table" style="width: 18px; height: 18px;"></i> Channel & Platform Conversion Breakdown</h3>
+                <p class="card-subtitle">Granular comparison of bidding efficiency across all channels</p>
+              </div>
+            </div>
+            <div class="card-body" style="padding: 0;">
+              <div class="table-responsive" style="border: none; border-radius: 0;">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Platform / Source</th>
+                      <th style="text-align: center;">Total Opportunities</th>
+                      <th style="text-align: center;">Accepted (Won)</th>
+                      <th style="text-align: center;">Active / In-Review</th>
+                      <th style="text-align: center;">Rejected</th>
+                      <th>Win Rate</th>
+                      <th>Earned Revenue</th>
+                      <th>Avg Project Size</th>
+                    </tr>
+                  </thead>
+                  <tbody id="analytics-platform-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== VIEW 9: SETTINGS & DATA ==================== -->
+        <section class="view-section" id="view-settings">
+          <div class="page-header">
+            <div class="page-title-group">
+              <h1 class="page-title">Application Settings & Data Backup</h1>
+              <p class="page-subtitle">Manage freelance profile preferences, export data backups, and configure localStorage persistence.</p>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: var(--space-6);">
+            
+            <!-- User Profile Card -->
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <h3 class="card-title"><i data-lucide="user" style="width: 18px; height: 18px; color: var(--primary-600);"></i> Freelancer Profile</h3>
+                  <p class="card-subtitle">Details shown in header and default proposals</p>
+                </div>
+              </div>
+              <div class="card-body">
+                <form id="settings-profile-form">
+                  <div class="form-grid grid-1">
+                    <div class="form-group">
+                      <label class="form-label" for="settings-user-name">Full Name</label>
+                      <input type="text" id="settings-user-name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label" for="settings-user-email">Email Address</label>
+                      <input type="email" id="settings-user-email" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label" for="settings-user-role">Professional Title</label>
+                      <input type="text" id="settings-user-role" class="form-control" placeholder="e.g. Senior Full-Stack Engineer">
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label" for="settings-user-rate">Target Hourly Rate</label>
+                      <input type="text" id="settings-user-rate" class="form-control" placeholder="e.g. $95/hr">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="margin-top: var(--space-2);">
+                      <i data-lucide="save"></i> Save Profile Settings
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <!-- Data Management & Backups -->
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <h3 class="card-title"><i data-lucide="database" style="width: 18px; height: 18px; color: var(--success-600);"></i> Data Persistence & Backups</h3>
+                  <p class="card-subtitle">All data is securely saved in browser localStorage</p>
+                </div>
+              </div>
+              <div class="card-body" style="display: flex; flex-direction: column; gap: var(--space-4);">
+                
+                <div style="background: var(--bg-surface-secondary); padding: var(--space-4); border-radius: var(--radius-md);">
+                  <div style="font-weight: 700; font-size: 0.875rem; margin-bottom: 4px;">Export Your Data</div>
+                  <p style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: var(--space-3);">
+                    Download clean CSV spreadsheets for Excel/Google Sheets, or full JSON database backups.
+                  </p>
+                  <div style="display: flex; gap: var(--space-2); flex-wrap: wrap;">
+                    <button class="btn btn-secondary btn-sm" onclick="window.storage.exportToCSV('proposals')">
+                      <i data-lucide="file-spreadsheet"></i> Proposals CSV
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="window.storage.exportToCSV('clients')">
+                      <i data-lucide="file-spreadsheet"></i> Clients CSV
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="window.storage.exportToJSON()">
+                      <i data-lucide="download"></i> Full JSON Backup
+                    </button>
+                  </div>
+                </div>
+
+                <div style="background: var(--bg-surface-secondary); padding: var(--space-4); border-radius: var(--radius-md);">
+                  <div style="font-weight: 700; font-size: 0.875rem; margin-bottom: 4px;">Import Data Backup</div>
+                  <p style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: var(--space-3);">
+                    Restore a previously saved JSON database backup.
+                  </p>
+                  <input type="file" id="import-file-input" accept=".json" style="display: none;" onchange="
+                    const file = this.files[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (e) => {
+                        const result = window.storage.importFromJSON(e.target.result);
+                        if (result.success) {
+                          window.app.refreshAll();
+                          window.app.showToast('Database restored successfully', 'success');
+                        } else {
+                          window.app.showToast('Import failed: ' + result.error, 'error');
+                        }
+                      };
+                      reader.readAsText(file);
+                    }
+                  ">
+                  <button class="btn btn-outline btn-sm" onclick="document.getElementById('import-file-input').click()">
+                    <i data-lucide="upload"></i> Select Backup JSON File
+                  </button>
+                </div>
+
+                <div style="border-top: 1px solid var(--border-color); padding-top: var(--space-4); display: flex; flex-direction: column; gap: var(--space-3);">
+                  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-2);">
+                    <div>
+                      <div style="font-weight: 700; font-size: 0.875rem;">Reset Sample Academic Data</div>
+                      <div style="font-size: 0.75rem; color: var(--text-muted);">Restores all realistic demo proposals and clients</div>
+                    </div>
+                    <button class="btn btn-outline btn-sm" onclick="window.app.resetDemoDataWithConfirm()">
+                      <i data-lucide="refresh-cw"></i> Reset Demo
+                    </button>
+                  </div>
+
+                  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-2);">
+                    <div>
+                      <div style="font-weight: 700; font-size: 0.875rem; color: var(--danger-500);">Erase All Data</div>
+                      <div style="font-size: 0.75rem; color: var(--text-muted);">Deletes every single record from localStorage</div>
+                    </div>
+                    <button class="btn btn-danger btn-sm" onclick="window.app.clearAllDataWithConfirm()">
+                      <i data-lucide="trash-2"></i> Clear Database
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ==================== MODALS ==================== -->
+
+  <!-- 1. Opportunity Form Modal -->
+  <div class="modal-backdrop" id="modal-opportunity-form">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-opportunity-title">Create Opportunity & Proposal</h3>
+        <button class="modal-close-btn" onclick="window.app.closeModal('modal-opportunity-form')">&times;</button>
+      </div>
+      <form id="opportunity-form">
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="form-group span-full">
+              <label class="form-label" for="opp-title">Project Title <span class="required-star">*</span></label>
+              <input type="text" id="opp-title" class="form-control" placeholder="e.g. E-Commerce Next.js Storefront Redesign" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="opp-client">Client / Company <span class="required-star">*</span></label>
+              <select id="opp-client" class="form-control" required></select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="opp-platform">Platform / Acquisition Source</label>
+              <select id="opp-platform" class="form-control">
+                <option value="Upwork">Upwork</option>
+                <option value="LinkedIn">LinkedIn</option>
+                <option value="Direct Outreach">Direct Outreach</option>
+                <option value="Referral">Referral</option>
+                <option value="Contra">Contra</option>
+                <option value="Fiverr Pro">Fiverr Pro</option>
+                <option value="Twitter/X">Twitter/X</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="opp-value">Estimated Value <span class="required-star">*</span></label>
+              <input type="number" id="opp-value" class="form-control" placeholder="e.g. 5000" min="0" step="50" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="opp-currency">Currency</label>
+              <select id="opp-currency" class="form-control">
+                <option value="USD">USD ($)</option>
+                <option value="EUR">EUR (€)</option>
+                <option value="GBP">GBP (£)</option>
+                <option value="INR">INR (₹)</option>
+                <option value="CAD">CAD ($)</option>
+                <option value="AUD">AUD ($)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="opp-date-discovered">Date Discovered</label>
+              <input type="date" id="opp-date-discovered" class="form-control">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="opp-deadline">Application Deadline</label>
+              <input type="date" id="opp-deadline" class="form-control">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="opp-submission-date">Proposal Submission Date</label>
+              <input type="date" id="opp-submission-date" class="form-control">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="opp-status">Proposal Status</label>
+              <select id="opp-status" class="form-control">
+                <option value="Draft">Draft</option>
+                <option value="Ready to Submit">Ready to Submit</option>
+                <option value="Submitted">Submitted</option>
+                <option value="Under Review">Under Review</option>
+                <option value="Interview">Interview</option>
+                <option value="Negotiation">Negotiation</option>
+                <option value="Accepted">Accepted (Won)</option>
+                <option value="Rejected">Rejected</option>
+                <option value="Withdrawn">Withdrawn</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="opp-followup-date">Follow-up Date Reminder</label>
+              <input type="date" id="opp-followup-date" class="form-control">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="opp-priority">Deal Priority</label>
+              <select id="opp-priority" class="form-control">
+                <option value="High">High Priority</option>
+                <option value="Medium" selected>Medium Priority</option>
+                <option value="Low">Low Priority</option>
+              </select>
+            </div>
+
+            <div class="form-group span-full">
+              <label class="form-label" for="opp-description">Project Scope & Description</label>
+              <textarea id="opp-description" class="form-control" rows="3" placeholder="Provide detailed brief, technical deliverables and deliverables..."></textarea>
+            </div>
+
+            <div class="form-group span-full">
+              <label class="form-label" for="opp-notes">Proposal Notes & Pitch Strategy</label>
+              <textarea id="opp-notes" class="form-control" rows="3" placeholder="Cover letter bullet points, portfolio links shared, special terms..."></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="window.app.closeModal('modal-opportunity-form')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Opportunity</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. Client Form Modal -->
+  <div class="modal-backdrop" id="modal-client-form">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-client-title">Add Client</h3>
+        <button class="modal-close-btn" onclick="window.app.closeModal('modal-client-form')">&times;</button>
+      </div>
+      <form id="client-form">
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="form-group span-full">
+              <label class="form-label" for="client-name">Company or Client Name <span class="required-star">*</span></label>
+              <input type="text" id="client-name" class="form-control" placeholder="e.g. Acme Tech Labs" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="client-contact">Contact Person</label>
+              <input type="text" id="client-contact" class="form-control" placeholder="e.g. John Doe">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="client-email">Email Address</label>
+              <input type="email" id="client-email" class="form-control" placeholder="john@acme.com">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="client-phone">Phone Number</label>
+              <input type="text" id="client-phone" class="form-control" placeholder="+1 (555) 000-0000">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="client-website">Website URL</label>
+              <input type="url" id="client-website" class="form-control" placeholder="https://acme.com">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="client-location">Location / Timezone</label>
+              <input type="text" id="client-location" class="form-control" placeholder="e.g. San Francisco, CA">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="client-industry">Industry</label>
+              <input type="text" id="client-industry" class="form-control" placeholder="e.g. SaaS, E-Commerce, FinTech">
+            </div>
+
+            <div class="form-group span-full">
+              <label class="form-label" for="client-notes">General Client Notes</label>
+              <textarea id="client-notes" class="form-control" rows="3" placeholder="Background, preferences, payment terms..."></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="window.app.closeModal('modal-client-form')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Client</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 3. Follow-up Form Modal -->
+  <div class="modal-backdrop" id="modal-followup-form">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-followup-title">Schedule Follow-up</h3>
+        <button class="modal-close-btn" onclick="window.app.closeModal('modal-followup-form')">&times;</button>
+      </div>
+      <form id="followup-form">
+        <div class="modal-body">
+          <div class="form-grid grid-1">
+            <div class="form-group">
+              <label class="form-label" for="followup-opportunity">Associated Opportunity</label>
+              <select id="followup-opportunity" class="form-control"></select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="followup-date">Due Date <span class="required-star">*</span></label>
+              <input type="date" id="followup-date" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="followup-type">Reminder Type</label>
+              <select id="followup-type" class="form-control">
+                <option value="Email">Email Check-in</option>
+                <option value="Platform Message">Marketplace Message</option>
+                <option value="Call / Meeting">Call / Meeting</option>
+                <option value="LinkedIn Message">LinkedIn Message</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="followup-notes">Reminder Notes / Action</label>
+              <textarea id="followup-notes" class="form-control" rows="3" placeholder="What to say or ask in this follow-up..."></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="window.app.closeModal('modal-followup-form')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Follow-up</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. Note Form Modal -->
+  <div class="modal-backdrop" id="modal-note-form">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-note-title">Create Note</h3>
+        <button class="modal-close-btn" onclick="window.app.closeModal('modal-note-form')">&times;</button>
+      </div>
+      <form id="note-form">
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="form-group span-full">
+              <label class="form-label" for="note-title">Note Title <span class="required-star">*</span></label>
+              <input type="text" id="note-title" class="form-control" placeholder="e.g. Discovery Call Requirements" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="note-client">Associate Client</label>
+              <select id="note-client" class="form-control"></select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="note-opportunity">Associate Opportunity</label>
+              <select id="note-opportunity" class="form-control"></select>
+            </div>
+
+            <div class="form-group span-full">
+              <label class="form-label" for="note-tags">Tags (Comma-separated)</label>
+              <input type="text" id="note-tags" class="form-control" placeholder="e.g. Security, Architecture, Hourly">
+            </div>
+
+            <div class="form-group span-full">
+              <label class="form-label" for="note-content">Note Content <span class="required-star">*</span></label>
+              <textarea id="note-content" class="form-control" rows="6" placeholder="Enter detailed notes, meeting minutes, technical requirements..." required></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="window.app.closeModal('modal-note-form')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Note</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 5. Opportunity Details Modal -->
+  <div class="modal-backdrop" id="modal-opp-detail">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-opp-detail-title">Opportunity Details</h3>
+        <button class="modal-close-btn" onclick="window.app.closeModal('modal-opp-detail')">&times;</button>
+      </div>
+      <div class="modal-body" id="modal-opp-detail-body"></div>
+    </div>
+  </div>
+
+  <!-- 6. Client Profile Modal -->
+  <div class="modal-backdrop" id="modal-client-profile">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-client-profile-title">Client Details</h3>
+        <button class="modal-close-btn" onclick="window.app.closeModal('modal-client-profile')">&times;</button>
+      </div>
+      <div class="modal-body" id="modal-client-profile-body"></div>
+    </div>
+  </div>
+
+  <!-- 7. Calendar Day Agenda Modal -->
+  <div class="modal-backdrop" id="modal-agenda">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-agenda-title">Schedule for Day</h3>
+        <button class="modal-close-btn" onclick="window.app.closeModal('modal-agenda')">&times;</button>
+      </div>
+      <div class="modal-body" id="modal-agenda-body"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="window.app.closeModal('modal-agenda')">Close</button>
+        <button type="button" class="btn btn-primary" onclick="window.app.closeModal('modal-agenda'); window.followups.openCreateModal();">
+          <i data-lucide="plus"></i> Add Event / Reminder
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. Universal Confirmation Modal -->
+  <div class="modal-backdrop" id="modal-confirm">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-confirm-title">Confirm Action</h3>
+        <button class="modal-close-btn" onclick="window.app.closeModal('modal-confirm')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="modal-confirm-message" style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5;"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="window.app.closeModal('modal-confirm')">Cancel</button>
+        <button type="button" class="btn btn-danger" id="modal-confirm-btn">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Application Logic Modules -->
+  <script src="js/storage.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/opportunities.js"></script>
+  <script src="js/proposals.js"></script>
+  <script src="js/clients.js"></script>
+  <script src="js/followups.js"></script>
+  <script src="js/calendar.js"></script>
+  <script src="js/notes.js"></script>
+  <script src="js/analytics.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

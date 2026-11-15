@@ -1,0 +1,147 @@
+/* ==========================================================================
+   FREELANCER PROPOSAL TRACKER - RESPONSIVE STYLES
+   ========================================================================== */
+
+@media (max-width: 1200px) {
+  .charts-grid-2col {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1024px) {
+  .app-sidebar {
+    transform: translateX(-100%);
+    box-shadow: var(--shadow-xl);
+  }
+
+  .app-sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  .app-main {
+    margin-left: 0 !important;
+  }
+
+  .mobile-menu-toggle {
+    display: flex;
+  }
+
+  .app-content {
+    padding: var(--space-5);
+  }
+
+  .metrics-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .app-header {
+    padding: 0 var(--space-4);
+  }
+
+  .header-left {
+    max-width: none;
+  }
+
+  .search-shortcut-badge {
+    display: none;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-4);
+    margin-bottom: var(--space-5);
+  }
+
+  .page-actions-group {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-meta-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .toolbar-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .toolbar-left, .toolbar-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .filter-input-search {
+    width: 100%;
+  }
+
+  .notification-panel {
+    right: var(--space-2);
+    left: var(--space-2);
+    width: auto;
+  }
+
+  .calendar-wrapper {
+    padding: var(--space-3);
+  }
+
+  .calendar-day-cell {
+    min-height: 70px;
+    padding: 3px;
+  }
+
+  .calendar-events-list {
+    display: none; /* In very compact mobile, dots are used instead */
+  }
+
+  .cal-event-dot-container {
+    display: flex;
+    gap: 2px;
+    justify-content: center;
+    margin-top: 2px;
+  }
+
+  .cal-mobile-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: var(--radius-full);
+  }
+}
+
+@media (max-width: 480px) {
+  .app-content {
+    padding: var(--space-3);
+  }
+
+  .stat-card {
+    padding: var(--space-4);
+  }
+
+  .stat-value {
+    font-size: 1.5rem;
+  }
+
+  .modal-dialog {
+    margin: var(--space-2);
+    max-height: 95vh;
+  }
+
+  .modal-header, .modal-body, .modal-footer {
+    padding: var(--space-4);
+  }
+
+  .quick-action-text {
+    display: none;
+  }
+
+  .quick-action-dropdown-btn {
+    padding: 0 var(--space-3);
+  }
+}
