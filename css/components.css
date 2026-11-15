@@ -235,7 +235,7 @@
    -------------------------------------------------------------------------- */
 .metrics-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
   gap: var(--space-5);
   margin-bottom: var(--space-8);
 }
@@ -252,6 +252,8 @@
   transition: transform var(--transition-fast), box-shadow var(--transition-fast);
   position: relative;
   overflow: hidden;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .stat-card:hover {
@@ -396,10 +398,21 @@
   margin-bottom: var(--space-8);
 }
 
+.charts-grid-2col > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .chart-container-box {
   position: relative;
   width: 100%;
+  max-width: 100%;
   height: 290px;
+  overflow: hidden;
+}
+
+.chart-container-box canvas {
+  max-width: 100% !important;
 }
 
 /* --------------------------------------------------------------------------
@@ -516,7 +529,10 @@
 
 .filter-input-search {
   position: relative;
-  min-width: 260px;
+  min-width: 0;
+  flex: 1 1 200px;
+  width: 100%;
+  max-width: 100%;
 }
 
 .filter-input-search input {
@@ -571,16 +587,24 @@
   overflow-x: auto;
   padding-bottom: var(--space-4);
   min-height: calc(100vh - 280px);
+  min-height: calc(100dvh - 280px);
+  width: 100%;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
 }
 
 .kanban-column {
-  flex: 0 0 320px;
+  flex: 0 0 min(290px, 85vw);
+  max-width: 85vw;
+  min-width: 0;
   background: var(--bg-surface-secondary);
   border-radius: var(--radius-xl);
   border: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
   max-height: calc(100vh - 240px);
+  max-height: calc(100dvh - 240px);
+  box-sizing: border-box;
 }
 
 .kanban-column-header {
@@ -884,21 +908,24 @@
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-xl);
   width: 100%;
-  max-width: 650px;
+  max-width: min(650px, calc(100vw - 1.5rem));
   max-height: 90vh;
+  max-height: calc(100dvh - 2rem);
+  margin: 1rem auto;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   transform: translateY(15px) scale(0.98);
   transition: transform var(--transition-normal);
+  box-sizing: border-box;
 }
 
 .modal-dialog.modal-lg {
-  max-width: 850px;
+  max-width: min(850px, calc(100vw - 1.5rem));
 }
 
 .modal-dialog.modal-sm {
-  max-width: 440px;
+  max-width: min(440px, calc(100vw - 1.5rem));
 }
 
 .modal-backdrop.active .modal-dialog {
@@ -1030,15 +1057,17 @@ textarea.form-control {
    -------------------------------------------------------------------------- */
 .toast-container {
   position: fixed;
-  bottom: var(--space-6);
-  right: var(--space-6);
+  bottom: 1rem;
+  right: 1rem;
   z-index: var(--z-toast);
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
   pointer-events: none;
-  max-width: 400px;
-  width: 100%;
+  max-width: min(400px, calc(100vw - 2rem));
+  width: calc(100vw - 2rem);
+  box-sizing: border-box;
+}
 }
 
 .toast {

@@ -1,15 +1,12 @@
 /**
- * Freelancer Proposal Tracker (ProposalFlow) - Multi-User Cloud Storage Engine
- * Backed by Supabase PostgreSQL with Row Level Security (RLS) data isolation.
+ * Freelancer Proposal Tracker (ProposalFlow) - Pure Local Storage Engine
+ * Zero external servers, zero cloud dependencies.
+ * All user profile and pipeline data resides securely in browser localStorage.
  */
 
 class StorageController {
   constructor() {
-    this.currentUserId = null;
-    this.currentUserEmail = null;
     this.currentProfile = null;
-
-    // In-memory cache for the authenticated user
     this.proposals = [];
     this.clients = [];
     this.followups = [];
@@ -18,108 +15,152 @@ class StorageController {
     this.isLoading = false;
   }
 
-  getClient() {
-    return window.supabaseManager.getClient();
+  /**
+   * Initializes data store on application boot.
+   * Reads profile and stored datasets from localStorage with defensive error handling.
+   */
+  init() {
+    this.currentProfile = this.getUserProfile();
+    this.proposals = this.safeLoadArray('ftp_proposals');
+    this.clients = this.safeLoadArray('ftp_clients');
+    this.followups = this.safeLoadArray('ftp_followups');
+    this.notes = this.safeLoadArray('ftp_notes');
+    this.activities = this.safeLoadArray('ftp_activities');
+    return this.hasValidProfile();
   }
 
-  /**
-   * Initializes data store for the authenticated user.
-   * Pulls user-isolated records from Supabase cloud database.
-   */
-  async initForUser(user) {
-    if (!user) return;
-    this.currentUserId = user.id;
-    this.currentUserEmail = user.email;
-    this.isLoading = true;
-
+  // --- SAFE LOCAL STORAGE HELPERS ---
+  safeLoadArray(key) {
     try {
-      const client = this.getClient();
-
-      // 1. Fetch Profile
-      const { data: profileData } = await client
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id);
-
-      if (profileData && profileData.length > 0) {
-        this.currentProfile = profileData[0];
-      } else {
-        // Fallback to user metadata
-        this.currentProfile = {
-          id: user.id,
-          full_name: user.user_metadata?.full_name || user.email.split('@')[0],
-          email: user.email,
-          role: user.user_metadata?.role || 'Full-Stack Freelancer',
-          target_hourly_rate: '$85/hr'
-        };
-      }
-
-      // 2. Fetch User-Isolated Opportunities
-      const { data: opps } = await client
-        .from('opportunities')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      this.proposals = (opps || []).map(p => this.mapDboToProposal(p));
-
-      // 3. Fetch User-Isolated Clients
-      const { data: clientRows } = await client
-        .from('clients')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      this.clients = (clientRows || []).map(c => this.mapDboToClient(c));
-
-      // 4. Fetch User-Isolated Follow-ups
-      const { data: folRows } = await client
-        .from('followups')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('due_date', { ascending: true });
-
-      this.followups = (folRows || []).map(f => this.mapDboToFollowup(f));
-
-      // 5. Fetch User-Isolated Notes
-      const { data: noteRows } = await client
-        .from('notes')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      this.notes = (noteRows || []).map(n => this.mapDboToNote(n));
-
-      // 6. Fetch User Activities
-      const { data: actRows } = await client
-        .from('activities')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      this.activities = (actRows || []).map(a => this.mapDboToActivity(a));
-
-      console.log(`✅ Loaded ${this.proposals.length} opportunities, ${this.clients.length} clients for user ${user.email}`);
+      const raw = localStorage.getItem(key);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
     } catch (err) {
-      console.error('Error fetching user data from Supabase:', err);
-    } finally {
-      this.isLoading = false;
+      console.warn(`[Storage] Failed to parse array for key "${key}", resetting to empty:`, err);
+      return [];
     }
   }
 
+  safeSave(key, data) {
+    try {
+      localStorage.setItem(key, JSON.stringify(data));
+      return true;
+    } catch (err) {
+      console.error(`[Storage] Failed to save key "${key}" to localStorage:`, err);
+      return false;
+    }
+  }
+
+  // --- USER PROFILE MANAGEMENT ---
   /**
-   * Purges all user data from memory upon logout to prevent state leakage.
+   * Retrieves the saved profile from localStorage under key "userProfile".
+   * Returns parsed profile object or null if missing or corrupted.
    */
-  purgeUserData() {
-    this.currentUserId = null;
-    this.currentUserEmail = null;
+  getUserProfile() {
+    try {
+      const raw = localStorage.getItem('userProfile');
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object' || !parsed.fullName) {
+        return null;
+      }
+      return parsed;
+    } catch (err) {
+      console.warn('[Storage] Corrupted userProfile in localStorage:', err);
+      return null;
+    }
+  }
+
+  hasValidProfile() {
+    const profile = this.getUserProfile();
+    return !!(profile && profile.fullName && profile.fullName.trim().length > 0);
+  }
+
+  /**
+   * Saves or updates the user profile under key "userProfile".
+   */
+  saveUserProfile(profileData) {
+    if (!profileData || typeof profileData !== 'object') return false;
+
+    const sanitized = {
+      fullName: (profileData.fullName || profileData.full_name || '').trim(),
+      title: (profileData.title || profileData.role || 'Freelancer').trim(),
+      email: (profileData.email || '').trim().toLowerCase(),
+      hourlyRate: profileData.hourlyRate || profileData.target_hourly_rate || '$85/hr',
+      currency: profileData.currency || 'USD',
+      primaryPlatform: profileData.primaryPlatform || 'Direct Outreach',
+      weeklyGoal: profileData.weeklyGoal || '$5,000 / month',
+      updatedAt: new Date().toISOString()
+    };
+
+    if (!sanitized.fullName) {
+      console.error('[Storage] Cannot save profile: fullName is required');
+      return false;
+    }
+
+    const saved = this.safeSave('userProfile', sanitized);
+    if (saved) {
+      this.currentProfile = sanitized;
+    }
+    return saved;
+  }
+
+  getProfile() {
+    if (!this.currentProfile) {
+      this.currentProfile = this.getUserProfile();
+    }
+    return this.currentProfile || {
+      fullName: 'Freelancer',
+      title: 'Full-Stack Freelancer',
+      email: 'freelancer@workspace.local',
+      hourlyRate: '$85/hr',
+      currency: 'USD',
+      primaryPlatform: 'Direct Outreach'
+    };
+  }
+
+  async updateProfile(profileData) {
+    const current = this.getProfile();
+    const merged = { ...current, ...profileData };
+    return this.saveUserProfile(merged);
+  }
+
+  /**
+   * Complete reset: clears localStorage and in-memory caches.
+   */
+  resetAllData() {
+    try {
+      localStorage.removeItem('userProfile');
+      localStorage.removeItem('ftp_proposals');
+      localStorage.removeItem('ftp_clients');
+      localStorage.removeItem('ftp_followups');
+      localStorage.removeItem('ftp_notes');
+      localStorage.removeItem('ftp_activities');
+    } catch (err) {
+      console.error('[Storage] Error during resetAllData:', err);
+    }
     this.currentProfile = null;
     this.proposals = [];
     this.clients = [];
     this.followups = [];
     this.notes = [];
     this.activities = [];
-    console.log('🧹 In-memory user state purged.');
+    return true;
+  }
+
+  clearUserData() {
+    this.proposals = [];
+    this.clients = [];
+    this.followups = [];
+    this.notes = [];
+    this.activities = [];
+    this.safeSave('ftp_proposals', []);
+    this.safeSave('ftp_clients', []);
+    this.safeSave('ftp_followups', []);
+    this.safeSave('ftp_notes', []);
+    this.safeSave('ftp_activities', []);
+    return true;
   }
 
   // --- PROPOSALS & OPPORTUNITIES ---
@@ -132,83 +173,42 @@ class StorageController {
   }
 
   async addProposal(proposalData) {
-    if (!this.currentUserId) return null;
-
     const newId = `OPP-${Date.now().toString().slice(-4)}-${Math.floor(Math.random() * 900 + 100)}`;
     const nowStr = new Date().toISOString().split('T')[0];
 
     const proposal = {
       id: newId,
-      userId: this.currentUserId,
       createdAt: nowStr,
-      ...proposalData
+      title: proposalData.title || 'Untitled Opportunity',
+      description: proposalData.description || '',
+      clientId: proposalData.clientId || null,
+      clientName: proposalData.clientName || '',
+      platform: proposalData.platform || (this.currentProfile ? this.currentProfile.primaryPlatform : 'Direct Outreach'),
+      value: Number(proposalData.value) || 0,
+      currency: proposalData.currency || (this.currentProfile ? this.currentProfile.currency : 'USD'),
+      dateDiscovered: proposalData.dateDiscovered || nowStr,
+      deadline: proposalData.deadline || null,
+      submissionDate: proposalData.submissionDate || null,
+      status: proposalData.status || 'Draft',
+      followUpDate: proposalData.followUpDate || null,
+      priority: proposalData.priority || 'Medium',
+      notes: proposalData.notes || ''
     };
 
-    // Update in-memory cache
     this.proposals.unshift(proposal);
-
-    // Persist to Supabase with RLS
-    try {
-      const client = this.getClient();
-      await client.from('opportunities').insert([{
-        id: proposal.id,
-        user_id: this.currentUserId,
-        title: proposal.title,
-        description: proposal.description || '',
-        client_id: proposal.clientId || null,
-        client_name: proposal.clientName || '',
-        platform: proposal.platform || 'Direct Outreach',
-        value: Number(proposal.value) || 0,
-        currency: proposal.currency || 'USD',
-        date_discovered: proposal.dateDiscovered || null,
-        deadline: proposal.deadline || null,
-        submission_date: proposal.submissionDate || null,
-        status: proposal.status || 'Draft',
-        follow_up_date: proposal.followUpDate || null,
-        priority: proposal.priority || 'Medium',
-        notes: proposal.notes || ''
-      }]);
-    } catch (err) {
-      console.error('Failed to save opportunity to Supabase:', err);
-    }
+    this.safeSave('ftp_proposals', this.proposals);
 
     this.logActivity('Opportunity Added', `Created "${proposal.title}" (${proposal.currency} ${Number(proposal.value).toLocaleString()})`, 'plus-circle');
     return proposal;
   }
 
   async updateProposal(id, updatedData) {
-    if (!this.currentUserId) return null;
-
     const index = this.proposals.findIndex(p => p.id === id);
     if (index === -1) return null;
 
     const oldStatus = this.proposals[index].status;
     this.proposals[index] = { ...this.proposals[index], ...updatedData };
-
-    // Persist to Supabase with RLS
-    try {
-      const client = this.getClient();
-      const updatePayload = {};
-
-      if (updatedData.title !== undefined) updatePayload.title = updatedData.title;
-      if (updatedData.description !== undefined) updatePayload.description = updatedData.description;
-      if (updatedData.clientId !== undefined) updatePayload.client_id = updatedData.clientId;
-      if (updatedData.clientName !== undefined) updatePayload.client_name = updatedData.clientName;
-      if (updatedData.platform !== undefined) updatePayload.platform = updatedData.platform;
-      if (updatedData.value !== undefined) updatePayload.value = Number(updatedData.value) || 0;
-      if (updatedData.currency !== undefined) updatePayload.currency = updatedData.currency;
-      if (updatedData.dateDiscovered !== undefined) updatePayload.date_discovered = updatedData.dateDiscovered || null;
-      if (updatedData.deadline !== undefined) updatePayload.deadline = updatedData.deadline || null;
-      if (updatedData.submissionDate !== undefined) updatePayload.submission_date = updatedData.submissionDate || null;
-      if (updatedData.status !== undefined) updatePayload.status = updatedData.status;
-      if (updatedData.followUpDate !== undefined) updatePayload.follow_up_date = updatedData.followUpDate || null;
-      if (updatedData.priority !== undefined) updatePayload.priority = updatedData.priority;
-      if (updatedData.notes !== undefined) updatePayload.notes = updatedData.notes;
-
-      await client.from('opportunities').update(updatePayload).eq('id', id).eq('user_id', this.currentUserId);
-    } catch (err) {
-      console.error('Failed to update opportunity in Supabase:', err);
-    }
+    this.safeSave('ftp_proposals', this.proposals);
 
     if (updatedData.status && updatedData.status !== oldStatus) {
       this.logActivity('Status Changed', `Updated "${this.proposals[index].title}" to ${updatedData.status}`, 'trending-up');
@@ -220,22 +220,13 @@ class StorageController {
   }
 
   async deleteProposal(id) {
-    if (!this.currentUserId) return false;
-
     const target = this.proposals.find(p => p.id === id);
     this.proposals = this.proposals.filter(p => p.id !== id);
+    this.safeSave('ftp_proposals', this.proposals);
 
     // Also remove associated follow-ups
     this.followups = this.followups.filter(f => f.opportunityId !== id);
-
-    // Persist to Supabase
-    try {
-      const client = this.getClient();
-      await client.from('opportunities').delete().eq('id', id).eq('user_id', this.currentUserId);
-      await client.from('followups').delete().eq('opportunity_id', id).eq('user_id', this.currentUserId);
-    } catch (err) {
-      console.error('Failed to delete opportunity from Supabase:', err);
-    }
+    this.safeSave('ftp_followups', this.followups);
 
     if (target) {
       this.logActivity('Opportunity Deleted', `Removed "${target.title}"`, 'trash');
@@ -253,83 +244,44 @@ class StorageController {
   }
 
   async addClient(clientData) {
-    if (!this.currentUserId) return null;
-
     const newId = `CLI-${Date.now().toString().slice(-4)}-${Math.floor(Math.random() * 900 + 100)}`;
     const nowStr = new Date().toISOString().split('T')[0];
 
     const client = {
       id: newId,
-      userId: this.currentUserId,
       createdAt: nowStr,
-      ...clientData
+      name: clientData.name || 'New Client',
+      contactPerson: clientData.contactPerson || '',
+      email: clientData.email || '',
+      phone: clientData.phone || '',
+      website: clientData.website || '',
+      location: clientData.location || '',
+      industry: clientData.industry || '',
+      notes: clientData.notes || ''
     };
 
     this.clients.unshift(client);
-
-    try {
-      const sb = this.getClient();
-      await sb.from('clients').insert([{
-        id: client.id,
-        user_id: this.currentUserId,
-        name: client.name,
-        contact_person: client.contactPerson || '',
-        email: client.email || '',
-        phone: client.phone || '',
-        website: client.website || '',
-        location: client.location || '',
-        industry: client.industry || '',
-        notes: client.notes || ''
-      }]);
-    } catch (err) {
-      console.error('Failed to save client to Supabase:', err);
-    }
+    this.safeSave('ftp_clients', this.clients);
 
     this.logActivity('Client Added', `Added new client "${client.name}"`, 'user-plus');
     return client;
   }
 
   async updateClient(id, updatedData) {
-    if (!this.currentUserId) return null;
-
     const index = this.clients.findIndex(c => c.id === id);
     if (index === -1) return null;
 
     this.clients[index] = { ...this.clients[index], ...updatedData };
-
-    try {
-      const sb = this.getClient();
-      const payload = {};
-      if (updatedData.name !== undefined) payload.name = updatedData.name;
-      if (updatedData.contactPerson !== undefined) payload.contact_person = updatedData.contactPerson;
-      if (updatedData.email !== undefined) payload.email = updatedData.email;
-      if (updatedData.phone !== undefined) payload.phone = updatedData.phone;
-      if (updatedData.website !== undefined) payload.website = updatedData.website;
-      if (updatedData.location !== undefined) payload.location = updatedData.location;
-      if (updatedData.industry !== undefined) payload.industry = updatedData.industry;
-      if (updatedData.notes !== undefined) payload.notes = updatedData.notes;
-
-      await sb.from('clients').update(payload).eq('id', id).eq('user_id', this.currentUserId);
-    } catch (err) {
-      console.error('Failed to update client in Supabase:', err);
-    }
+    this.safeSave('ftp_clients', this.clients);
 
     this.logActivity('Client Updated', `Updated profile of "${this.clients[index].name}"`, 'user-check');
     return this.clients[index];
   }
 
   async deleteClient(id) {
-    if (!this.currentUserId) return false;
-
     const target = this.clients.find(c => c.id === id);
     this.clients = this.clients.filter(c => c.id !== id);
-
-    try {
-      const sb = this.getClient();
-      await sb.from('clients').delete().eq('id', id).eq('user_id', this.currentUserId);
-    } catch (err) {
-      console.error('Failed to delete client from Supabase:', err);
-    }
+    this.safeSave('ftp_clients', this.clients);
 
     if (target) {
       this.logActivity('Client Deleted', `Removed client "${target.name}"`, 'trash');
@@ -343,84 +295,45 @@ class StorageController {
   }
 
   async addFollowup(followupData) {
-    if (!this.currentUserId) return null;
-
     const newId = `FOL-${Date.now().toString().slice(-4)}-${Math.floor(Math.random() * 900 + 100)}`;
     const nowStr = new Date().toISOString().split('T')[0];
 
     const followup = {
       id: newId,
-      userId: this.currentUserId,
       completed: false,
       createdAt: nowStr,
-      ...followupData
+      opportunityId: followupData.opportunityId || null,
+      opportunityTitle: followupData.opportunityTitle || '',
+      clientId: followupData.clientId || null,
+      clientName: followupData.clientName || 'Client',
+      dueDate: followupData.dueDate || nowStr,
+      type: followupData.type || 'Email',
+      notes: followupData.notes || ''
     };
 
     this.followups.unshift(followup);
-
-    try {
-      const sb = this.getClient();
-      await sb.from('followups').insert([{
-        id: followup.id,
-        user_id: this.currentUserId,
-        opportunity_id: followup.opportunityId || null,
-        opportunity_title: followup.opportunityTitle || '',
-        client_id: followup.clientId || null,
-        client_name: followup.clientName || 'Client',
-        due_date: followup.dueDate,
-        type: followup.type || 'Email',
-        notes: followup.notes || '',
-        completed: false
-      }]);
-    } catch (err) {
-      console.error('Failed to save follow-up to Supabase:', err);
-    }
+    this.safeSave('ftp_followups', this.followups);
 
     this.logActivity('Follow-up Scheduled', `Reminder for "${followup.clientName}" on ${followup.dueDate}`, 'bell');
     return followup;
   }
 
   async updateFollowup(id, updatedData) {
-    if (!this.currentUserId) return null;
-
     const index = this.followups.findIndex(f => f.id === id);
     if (index === -1) return null;
 
     this.followups[index] = { ...this.followups[index], ...updatedData };
-
-    try {
-      const sb = this.getClient();
-      const payload = {};
-      if (updatedData.dueDate !== undefined) payload.due_date = updatedData.dueDate;
-      if (updatedData.type !== undefined) payload.type = updatedData.type;
-      if (updatedData.notes !== undefined) payload.notes = updatedData.notes;
-      if (updatedData.completed !== undefined) payload.completed = updatedData.completed;
-
-      await sb.from('followups').update(payload).eq('id', id).eq('user_id', this.currentUserId);
-    } catch (err) {
-      console.error('Failed to update follow-up in Supabase:', err);
-    }
+    this.safeSave('ftp_followups', this.followups);
 
     return this.followups[index];
   }
 
   async toggleFollowupComplete(id) {
-    if (!this.currentUserId) return null;
-
     const index = this.followups.findIndex(f => f.id === id);
     if (index === -1) return null;
 
     this.followups[index].completed = !this.followups[index].completed;
-
-    try {
-      const sb = this.getClient();
-      await sb.from('followups')
-        .update({ completed: this.followups[index].completed })
-        .eq('id', id)
-        .eq('user_id', this.currentUserId);
-    } catch (err) {
-      console.error('Failed to toggle follow-up in Supabase:', err);
-    }
+    this.safeSave('ftp_followups', this.followups);
 
     const statusText = this.followups[index].completed ? 'Completed' : 'Reopened';
     this.logActivity('Follow-up Updated', `${statusText} follow-up for "${this.followups[index].clientName}"`, 'check');
@@ -428,17 +341,8 @@ class StorageController {
   }
 
   async deleteFollowup(id) {
-    if (!this.currentUserId) return false;
-
     this.followups = this.followups.filter(f => f.id !== id);
-
-    try {
-      const sb = this.getClient();
-      await sb.from('followups').delete().eq('id', id).eq('user_id', this.currentUserId);
-    } catch (err) {
-      console.error('Failed to delete follow-up from Supabase:', err);
-    }
-
+    this.safeSave('ftp_followups', this.followups);
     return true;
   }
 
@@ -448,76 +352,41 @@ class StorageController {
   }
 
   async addNote(noteData) {
-    if (!this.currentUserId) return null;
-
     const newId = `NOT-${Date.now().toString().slice(-4)}-${Math.floor(Math.random() * 900 + 100)}`;
     const now = new Date();
     const formattedDate = `${now.toISOString().split('T')[0]} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
     const note = {
       id: newId,
-      userId: this.currentUserId,
       createdAt: formattedDate,
-      ...noteData
+      title: noteData.title || 'Untitled Note',
+      content: noteData.content || '',
+      clientId: noteData.clientId || null,
+      clientName: noteData.clientName || '',
+      opportunityId: noteData.opportunityId || null,
+      tags: Array.isArray(noteData.tags) ? noteData.tags : []
     };
 
     this.notes.unshift(note);
-
-    try {
-      const sb = this.getClient();
-      await sb.from('notes').insert([{
-        id: note.id,
-        user_id: this.currentUserId,
-        title: note.title,
-        content: note.content,
-        client_id: note.clientId || null,
-        client_name: note.clientName || '',
-        opportunity_id: note.opportunityId || null,
-        tags: Array.isArray(note.tags) ? note.tags : []
-      }]);
-    } catch (err) {
-      console.error('Failed to save note to Supabase:', err);
-    }
+    this.safeSave('ftp_notes', this.notes);
 
     this.logActivity('Note Added', `Added note: "${note.title}"`, 'file-text');
     return note;
   }
 
   async updateNote(id, updatedData) {
-    if (!this.currentUserId) return null;
-
     const index = this.notes.findIndex(n => n.id === id);
     if (index === -1) return null;
 
     this.notes[index] = { ...this.notes[index], ...updatedData };
-
-    try {
-      const sb = this.getClient();
-      const payload = {};
-      if (updatedData.title !== undefined) payload.title = updatedData.title;
-      if (updatedData.content !== undefined) payload.content = updatedData.content;
-      if (updatedData.tags !== undefined) payload.tags = updatedData.tags;
-
-      await sb.from('notes').update(payload).eq('id', id).eq('user_id', this.currentUserId);
-    } catch (err) {
-      console.error('Failed to update note in Supabase:', err);
-    }
+    this.safeSave('ftp_notes', this.notes);
 
     return this.notes[index];
   }
 
   async deleteNote(id) {
-    if (!this.currentUserId) return false;
-
     this.notes = this.notes.filter(n => n.id !== id);
-
-    try {
-      const sb = this.getClient();
-      await sb.from('notes').delete().eq('id', id).eq('user_id', this.currentUserId);
-    } catch (err) {
-      console.error('Failed to delete note from Supabase:', err);
-    }
-
+    this.safeSave('ftp_notes', this.notes);
     return true;
   }
 
@@ -527,13 +396,10 @@ class StorageController {
   }
 
   async logActivity(action, details, icon = 'activity') {
-    if (!this.currentUserId) return;
-
     const now = new Date();
     const timestamp = `${now.toISOString().split('T')[0]} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     const newActivity = {
       id: `ACT-${Date.now()}`,
-      userId: this.currentUserId,
       action,
       details,
       timestamp,
@@ -542,62 +408,12 @@ class StorageController {
 
     this.activities.unshift(newActivity);
     if (this.activities.length > 50) this.activities.pop();
-
-    try {
-      const sb = this.getClient();
-      await sb.from('activities').insert([{
-        id: newActivity.id,
-        user_id: this.currentUserId,
-        action: newActivity.action,
-        details: newActivity.details,
-        icon: newActivity.icon,
-        timestamp: newActivity.timestamp
-      }]);
-    } catch (e) {
-      // Activity log non-critical error
-    }
+    this.safeSave('ftp_activities', this.activities);
   }
 
-  // --- USER PROFILE & SETTINGS ---
-  getProfile() {
-    return this.currentProfile || {
-      full_name: 'Freelancer',
-      email: this.currentUserEmail || '',
-      role: 'Full-Stack Freelancer',
-      target_hourly_rate: '$85/hr'
-    };
-  }
-
-  async updateProfile(profileData) {
-    if (!this.currentUserId) return false;
-
-    this.currentProfile = { ...this.currentProfile, ...profileData };
-
-    try {
-      const sb = this.getClient();
-      await sb.from('profiles').update({
-        full_name: profileData.full_name,
-        role: profileData.role,
-        target_hourly_rate: profileData.target_hourly_rate
-      }).eq('id', this.currentUserId);
-
-      // Also update user metadata in Supabase Auth
-      await sb.auth.updateUser({
-        data: {
-          full_name: profileData.full_name,
-          role: profileData.role
-        }
-      });
-    } catch (err) {
-      console.error('Failed to update profile in Supabase:', err);
-    }
-
-    return true;
-  }
-
-  // --- OPTIONAL DEMO DATA (ONLY WHEN USER EXPLICITLY REQUESTS IT) ---
+  // --- SAMPLE DEMO DATA (ON-DEMAND SEEDING) ---
   async loadSampleDemoData() {
-    if (!this.currentUserId) return false;
+    const curr = (this.currentProfile && this.currentProfile.currency) || 'USD';
 
     const SAMPLE_CLIENTS = [
       { id: `CLI-DEMO-1`, name: 'Apex FinTech Solutions', contactPerson: 'David Miller', email: 'david@apexfintech.io', location: 'New York, USA', industry: 'FinTech / Banking', notes: 'Series B crypto analytics client.' },
@@ -606,9 +422,9 @@ class StorageController {
     ];
 
     const SAMPLE_OPPS = [
-      { id: `OPP-DEMO-1`, title: 'High-Frequency Crypto Analytics Dashboard', clientId: `CLI-DEMO-1`, clientName: 'Apex FinTech Solutions', platform: 'Upwork', value: 6500, currency: 'USD', dateDiscovered: '2026-10-15', deadline: '2026-11-25', submissionDate: '2026-10-22', status: 'Accepted', priority: 'High', description: 'Real-time WebSocket market trading dashboard with Chart.js.', notes: 'Kickoff call completed.' },
-      { id: `OPP-DEMO-2`, title: 'Telehealth Patient Portal UI Overhaul', clientId: `CLI-DEMO-2`, clientName: 'Nexa Health Tech', platform: 'LinkedIn', value: 12000, currency: 'USD', dateDiscovered: '2026-10-20', deadline: '2026-12-05', submissionDate: '2026-11-01', status: 'Negotiation', priority: 'High', description: 'Accessible HIPAA-compliant medical patient appointment dashboard.', notes: 'Discussing milestone structure.' },
-      { id: `OPP-DEMO-3`, title: 'Kubernetes Cluster Cost Optimization CLI & Web UI', clientId: `CLI-DEMO-3`, clientName: 'CloudScale Infrastructure', platform: 'Direct Outreach', value: 8500, currency: 'USD', dateDiscovered: '2026-11-01', deadline: '2026-11-30', submissionDate: '2026-11-08', status: 'Interview', priority: 'High', description: 'Tool for visual multi-cluster AWS cost monitoring.', notes: 'Technical interview completed.' }
+      { id: `OPP-DEMO-1`, title: 'High-Frequency Crypto Analytics Dashboard', clientId: `CLI-DEMO-1`, clientName: 'Apex FinTech Solutions', platform: 'Upwork', value: 6500, currency: curr, dateDiscovered: '2026-10-15', deadline: '2026-11-25', submissionDate: '2026-10-22', status: 'Accepted', priority: 'High', description: 'Real-time WebSocket market trading dashboard with Chart.js.', notes: 'Kickoff call completed.' },
+      { id: `OPP-DEMO-2`, title: 'Telehealth Patient Portal UI Overhaul', clientId: `CLI-DEMO-2`, clientName: 'Nexa Health Tech', platform: 'LinkedIn', value: 12000, currency: curr, dateDiscovered: '2026-10-20', deadline: '2026-12-05', submissionDate: '2026-11-01', status: 'Negotiation', priority: 'High', description: 'Accessible HIPAA-compliant medical patient appointment dashboard.', notes: 'Discussing milestone structure.' },
+      { id: `OPP-DEMO-3`, title: 'Kubernetes Cluster Cost Optimization CLI & Web UI', clientId: `CLI-DEMO-3`, clientName: 'CloudScale Infrastructure', platform: 'Direct Outreach', value: 8500, currency: curr, dateDiscovered: '2026-11-01', deadline: '2026-11-30', submissionDate: '2026-11-08', status: 'Interview', priority: 'High', description: 'Tool for visual multi-cluster AWS cost monitoring.', notes: 'Technical interview completed.' }
     ];
 
     const todayStr = new Date().toISOString().split('T')[0];
@@ -627,29 +443,6 @@ class StorageController {
     }
 
     this.logActivity('Sample Data Loaded', 'Loaded sample demo opportunities and clients for evaluation', 'download');
-    return true;
-  }
-
-  async clearUserData() {
-    if (!this.currentUserId) return false;
-
-    try {
-      const sb = this.getClient();
-      await sb.from('opportunities').delete().eq('user_id', this.currentUserId);
-      await sb.from('clients').delete().eq('user_id', this.currentUserId);
-      await sb.from('followups').delete().eq('user_id', this.currentUserId);
-      await sb.from('notes').delete().eq('user_id', this.currentUserId);
-      await sb.from('activities').delete().eq('user_id', this.currentUserId);
-    } catch (err) {
-      console.error('Failed to clear user data in Supabase:', err);
-    }
-
-    this.proposals = [];
-    this.clients = [];
-    this.followups = [];
-    this.notes = [];
-    this.activities = [];
-
     return true;
   }
 
@@ -707,14 +500,14 @@ class StorageController {
 
   exportToJSON() {
     const backupData = {
-      version: '2.0.0',
-      userId: this.currentUserId,
-      userEmail: this.currentUserEmail,
+      version: '2.5.0',
+      profile: this.getUserProfile(),
       exportDate: new Date().toISOString(),
       proposals: this.proposals,
       clients: this.clients,
       followups: this.followups,
-      notes: this.notes
+      notes: this.notes,
+      activities: this.activities
     };
 
     const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
@@ -725,87 +518,6 @@ class StorageController {
     link.click();
     document.body.removeChild(link);
     return true;
-  }
-
-  // --- DTO MAPPERS ---
-  mapDboToProposal(dbo) {
-    return {
-      id: dbo.id,
-      userId: dbo.user_id,
-      title: dbo.title,
-      description: dbo.description || '',
-      clientId: dbo.client_id,
-      clientName: dbo.client_name,
-      platform: dbo.platform,
-      value: Number(dbo.value) || 0,
-      currency: dbo.currency || 'USD',
-      dateDiscovered: dbo.date_discovered || '',
-      deadline: dbo.deadline || '',
-      submissionDate: dbo.submission_date || '',
-      status: dbo.status || 'Draft',
-      followUpDate: dbo.follow_up_date || '',
-      priority: dbo.priority || 'Medium',
-      notes: dbo.notes || '',
-      createdAt: dbo.created_at
-    };
-  }
-
-  mapDboToClient(dbo) {
-    return {
-      id: dbo.id,
-      userId: dbo.user_id,
-      name: dbo.name,
-      contactPerson: dbo.contact_person || '',
-      email: dbo.email || '',
-      phone: dbo.phone || '',
-      website: dbo.website || '',
-      location: dbo.location || '',
-      industry: dbo.industry || '',
-      notes: dbo.notes || '',
-      createdAt: dbo.created_at
-    };
-  }
-
-  mapDboToFollowup(dbo) {
-    return {
-      id: dbo.id,
-      userId: dbo.user_id,
-      opportunityId: dbo.opportunity_id,
-      opportunityTitle: dbo.opportunity_title || '',
-      clientId: dbo.client_id,
-      clientName: dbo.client_name,
-      dueDate: dbo.due_date,
-      type: dbo.type || 'Email',
-      notes: dbo.notes || '',
-      completed: !!dbo.completed,
-      createdAt: dbo.created_at
-    };
-  }
-
-  mapDboToNote(dbo) {
-    return {
-      id: dbo.id,
-      userId: dbo.user_id,
-      title: dbo.title,
-      content: dbo.content,
-      clientId: dbo.client_id,
-      clientName: dbo.client_name || '',
-      opportunityId: dbo.opportunity_id,
-      tags: dbo.tags || [],
-      createdAt: dbo.created_at
-    };
-  }
-
-  mapDboToActivity(dbo) {
-    return {
-      id: dbo.id,
-      userId: dbo.user_id,
-      action: dbo.action,
-      details: dbo.details,
-      icon: dbo.icon || 'activity',
-      timestamp: dbo.timestamp,
-      createdAt: dbo.created_at
-    };
   }
 }
 
