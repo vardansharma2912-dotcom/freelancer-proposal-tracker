@@ -1,6 +1,6 @@
 /**
- * Freelancer Proposal Tracker - Main Application Orchestrator
- * Coordinates routing, theme toggle, modals, toasts, global search, and data sync.
+ * Freelancer Proposal Tracker (ProposalFlow) - Main Application Orchestrator
+ * Coordinates routing, authentication lifecycle, modals, toasts, global search, and UI state.
  */
 
 class AppController {
@@ -12,9 +12,66 @@ class AppController {
   init() {
     this.applyTheme();
     this.bindGlobalEvents();
+    if (window.auth) {
+      window.auth.init();
+    }
+  }
+
+  // --- USER LIFECYCLE & PROFILE POPULATION ---
+  onUserLoggedIn(user) {
+    const profile = window.storage.getProfile();
+    this.updateUserProfileUI(profile);
+    this.updateSupabaseStatusPill();
     this.initModules();
     this.updateNotificationBell();
     this.showView('dashboard');
+  }
+
+  updateUserProfileUI(profile) {
+    const name = profile.full_name || profile.name || 'Freelancer';
+    const email = profile.email || window.storage.currentUserEmail || '';
+    const role = profile.role || 'Full-Stack Freelancer';
+    const initial = name.charAt(0).toUpperCase();
+
+    // 1. Sidebar Profile Card
+    const sideName = document.querySelector('.sidebar-user-name');
+    const sideRole = document.querySelector('.sidebar-user-role');
+    const sideAvatar = document.querySelector('.sidebar-user-avatar');
+    if (sideName) sideName.textContent = name;
+    if (sideRole) sideRole.textContent = role;
+    if (sideAvatar) sideAvatar.textContent = initial;
+
+    // 2. Topbar Profile Menu
+    const topAvatar = document.getElementById('topbar-user-avatar');
+    const dropName = document.getElementById('dropdown-user-name');
+    const dropEmail = document.getElementById('dropdown-user-email');
+    if (topAvatar) topAvatar.textContent = initial;
+    if (dropName) dropName.textContent = name;
+    if (dropEmail) dropEmail.textContent = email;
+
+    // 3. Settings View Fields
+    const nameInput = document.getElementById('settings-user-name');
+    const emailInput = document.getElementById('settings-user-email');
+    const roleInput = document.getElementById('settings-user-role');
+    const rateInput = document.getElementById('settings-user-rate');
+    if (nameInput) nameInput.value = name;
+    if (emailInput) emailInput.value = email;
+    if (roleInput) roleInput.value = role;
+    if (rateInput) rateInput.value = profile.target_hourly_rate || '$85/hr';
+  }
+
+  updateSupabaseStatusPill() {
+    const pill = document.getElementById('supabase-status-pill');
+    if (!pill) return;
+
+    const isLive = window.supabaseManager.isLiveConnected;
+    if (isLive) {
+      pill.innerHTML = `<span class="status-dot-green"></span> Supabase Cloud (RLS Active)`;
+      pill.title = 'Connected directly to Supabase PostgreSQL with strict Row Level Security';
+    } else {
+      pill.innerHTML = `<span class="status-dot-amber"></span> Isolated User Engine`;
+      pill.title = 'Running on Supabase-compatible multi-user engine. Click to connect your Supabase project.';
+    }
   }
 
   // --- VIEW ROUTING ---
@@ -81,8 +138,7 @@ class AppController {
 
   // --- THEME TOGGLE (LIGHT / DARK) ---
   applyTheme() {
-    const settings = window.storage.getSettings();
-    const theme = settings.theme || 'light';
+    const theme = localStorage.getItem('ftp_theme') || 'light';
     document.documentElement.setAttribute('data-theme', theme);
     this.updateThemeIcon(theme);
   }
@@ -92,11 +148,7 @@ class AppController {
     const nextTheme = current === 'dark' ? 'light' : 'dark';
 
     document.documentElement.setAttribute('data-theme', nextTheme);
-
-    const settings = window.storage.getSettings();
-    settings.theme = nextTheme;
-    window.storage.saveSettings(settings);
-
+    localStorage.setItem('ftp_theme', nextTheme);
     this.updateThemeIcon(nextTheme);
 
     // Refresh charts to match theme colors
@@ -147,6 +199,16 @@ class AppController {
       });
     }
 
+    // User Avatar Menu Dropdown Toggle
+    const userMenuBtn = document.getElementById('btn-user-avatar-menu');
+    if (userMenuBtn) {
+      userMenuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const panel = document.getElementById('user-dropdown-panel');
+        if (panel) panel.classList.toggle('active');
+      });
+    }
+
     // Global Search input & dropdown
     const globalSearchInput = document.getElementById('global-search-input');
     if (globalSearchInput) {
@@ -155,7 +217,7 @@ class AppController {
         if (e.target.value.trim().length > 0) this.handleGlobalSearch(e.target.value);
       });
 
-      // Keyboard shortcut Ctrl+K or / to search
+      // Keyboard shortcut Ctrl+K
       window.addEventListener('keydown', (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
           e.preventDefault();
@@ -163,12 +225,13 @@ class AppController {
         } else if (e.key === 'Escape') {
           this.closeGlobalSearch();
           this.closeNotificationPanel();
+          this.closeUserDropdown();
           if (this.activeModal) this.closeModal(this.activeModal);
         }
       });
     }
 
-    // Close search dropdown on click outside
+    // Close dropdowns on outside click
     document.addEventListener('click', (e) => {
       const searchBox = document.querySelector('.header-search-box');
       if (searchBox && !searchBox.contains(e.target)) {
@@ -179,12 +242,23 @@ class AppController {
       if (notifArea && !notifArea.contains(e.target)) {
         this.closeNotificationPanel();
       }
+
+      const userMenuWrapper = document.querySelector('.user-menu-wrapper');
+      if (userMenuWrapper && !userMenuWrapper.contains(e.target)) {
+        this.closeUserDropdown();
+      }
     });
 
     // Notification Bell button
     const notifBtn = document.getElementById('btn-notification-bell');
     if (notifBtn) {
       notifBtn.addEventListener('click', () => this.toggleNotificationPanel());
+    }
+
+    // Supabase Status Pill click
+    const statusPill = document.getElementById('supabase-status-pill');
+    if (statusPill) {
+      statusPill.addEventListener('click', () => this.openSupabaseConfigModal());
     }
 
     // Modal backdrop click to close
@@ -222,6 +296,21 @@ class AppController {
     if (settingsForm) {
       settingsForm.addEventListener('submit', (e) => this.handleSettingsSubmit(e));
     }
+
+    const passwordForm = document.getElementById('settings-password-form');
+    if (passwordForm) {
+      passwordForm.addEventListener('submit', (e) => this.handlePasswordChange(e));
+    }
+
+    const supabaseConfigForm = document.getElementById('supabase-config-form');
+    if (supabaseConfigForm) {
+      supabaseConfigForm.addEventListener('submit', (e) => this.handleSaveSupabaseConfig(e));
+    }
+  }
+
+  closeUserDropdown() {
+    const panel = document.getElementById('user-dropdown-panel');
+    if (panel) panel.classList.remove('active');
   }
 
   initModules() {
@@ -478,7 +567,6 @@ class AppController {
       btnConfirm.textContent = confirmText;
       btnConfirm.className = isDanger ? 'btn btn-danger' : 'btn btn-primary';
 
-      // Replace click handler safely
       btnConfirm.onclick = () => {
         this.closeModal('modal-confirm');
         if (typeof onConfirm === 'function') onConfirm();
@@ -526,9 +614,6 @@ class AppController {
     if (!opp) return;
 
     const client = window.storage.getClientById(opp.clientId);
-    const followups = window.storage.getFollowups().filter(f => f.opportunityId === id);
-    const notes = window.storage.getNotes().filter(n => n.opportunityId === id);
-
     const titleEl = document.getElementById('modal-opp-detail-title');
     if (titleEl) titleEl.textContent = opp.title;
 
@@ -608,70 +693,119 @@ class AppController {
 
   // --- SETTINGS VIEW LOGIC ---
   populateSettingsForm() {
-    const settings = window.storage.getSettings();
-    const profile = settings.userProfile || {};
-
-    const nameInput = document.getElementById('settings-user-name');
-    const emailInput = document.getElementById('settings-user-email');
-    const roleInput = document.getElementById('settings-user-role');
-    const rateInput = document.getElementById('settings-user-rate');
-
-    if (nameInput) nameInput.value = profile.name || '';
-    if (emailInput) emailInput.value = profile.email || '';
-    if (roleInput) roleInput.value = profile.role || '';
-    if (rateInput) rateInput.value = profile.rate || '';
+    const profile = window.storage.getProfile();
+    this.updateUserProfileUI(profile);
   }
 
-  handleSettingsSubmit(e) {
+  async handleSettingsSubmit(e) {
     e.preventDefault();
 
     const name = document.getElementById('settings-user-name').value.trim();
-    const email = document.getElementById('settings-user-email').value.trim();
     const role = document.getElementById('settings-user-role').value.trim();
     const rate = document.getElementById('settings-user-rate').value.trim();
 
-    const settings = window.storage.getSettings();
-    settings.userProfile = { name, email, role, rate };
-    window.storage.saveSettings(settings);
+    await window.storage.updateProfile({
+      full_name: name,
+      role: role,
+      target_hourly_rate: rate
+    });
 
-    // Update sidebar profile card
-    const sideName = document.querySelector('.sidebar-user-name');
-    const sideRole = document.querySelector('.sidebar-user-role');
-    const sideAvatar = document.querySelector('.sidebar-user-avatar');
-
-    if (sideName) sideName.textContent = name;
-    if (sideRole) sideRole.textContent = role;
-    if (sideAvatar && name) sideAvatar.textContent = name.charAt(0).toUpperCase();
-
-    this.showToast('Profile settings saved successfully', 'success');
+    this.updateUserProfileUI(window.storage.getProfile());
+    this.showToast('Profile updated and saved to Supabase cloud.', 'success');
   }
 
-  resetDemoDataWithConfirm() {
+  async handlePasswordChange(e) {
+    e.preventDefault();
+
+    const newPass = document.getElementById('settings-new-password').value;
+    const confirmPass = document.getElementById('settings-confirm-password').value;
+
+    if (newPass.length < 6) {
+      this.showToast('Password must be at least 6 characters.', 'error');
+      return;
+    }
+
+    if (newPass !== confirmPass) {
+      this.showToast('New passwords do not match.', 'error');
+      return;
+    }
+
+    try {
+      const client = window.supabaseManager.getClient();
+      const { error } = await client.auth.updateUser({ password: newPass });
+
+      if (error) {
+        this.showToast(error.message || 'Failed to update password.', 'error');
+      } else {
+        this.showToast('Password updated successfully!', 'success');
+        document.getElementById('settings-password-form').reset();
+      }
+    } catch (err) {
+      this.showToast('Error updating password.', 'error');
+    }
+  }
+
+  // --- OPTIONAL DEMO DATA (ONLY WHEN USER EXPLICITLY REQUESTS IT) ---
+  loadDemoDataWithConfirm() {
     this.confirmDialog({
-      title: 'Reset Demo Data',
-      message: 'This will reset all opportunities, clients, and follow-ups back to the comprehensive sample academic demo dataset. Any custom records will be overwritten.',
-      confirmText: 'Reset Demo Data',
-      isDanger: true,
-      onConfirm: () => {
-        window.storage.resetDemoData();
+      title: 'Load Sample Demo Records?',
+      message: 'This will add sample freelance opportunities, clients, and follow-ups to your current authenticated account. You can delete or clear them at any time.',
+      confirmText: 'Load Demo Data',
+      isDanger: false,
+      onConfirm: async () => {
+        await window.storage.loadSampleDemoData();
         this.refreshAll();
-        this.showToast('Reset back to demo records successfully', 'success');
+        this.showToast('Sample demonstration records loaded into your account.', 'success');
       }
     });
   }
 
-  clearAllDataWithConfirm() {
+  clearMyDataWithConfirm() {
     this.confirmDialog({
-      title: 'Clear All Records',
-      message: 'Are you sure you want to completely erase all data? The application will be left with zero records.',
-      confirmText: 'Clear Everything',
+      title: 'Erase All My Data',
+      message: 'Are you sure you want to permanently delete all your opportunities, clients, notes and follow-ups from your Supabase cloud database? This cannot be undone.',
+      confirmText: 'Erase All My Data',
       isDanger: true,
-      onConfirm: () => {
-        window.storage.clearAllData();
+      onConfirm: async () => {
+        await window.storage.clearUserData();
         this.refreshAll();
-        this.showToast('All application records have been cleared', 'info');
+        this.showToast('All your workspace records have been deleted.', 'info');
       }
     });
+  }
+
+  // --- SUPABASE CONFIGURATION MODAL ---
+  openSupabaseConfigModal() {
+    const config = window.supabaseManager.getConfig();
+    const urlInput = document.getElementById('supabase-cfg-url');
+    const keyInput = document.getElementById('supabase-cfg-key');
+
+    if (urlInput) urlInput.value = config.url && !config.url.includes('xyzcompany') ? config.url : '';
+    if (keyInput) keyInput.value = config.anonKey && !config.anonKey.includes('mock_key') ? config.anonKey : '';
+
+    this.openModal('modal-supabase-config');
+  }
+
+  handleSaveSupabaseConfig(e) {
+    e.preventDefault();
+
+    const url = document.getElementById('supabase-cfg-url').value.trim();
+    const key = document.getElementById('supabase-cfg-key').value.trim();
+
+    if (!url || !key) {
+      this.showToast('Please provide both Project URL and Public Anon Key', 'error');
+      return;
+    }
+
+    const saved = window.supabaseManager.saveConfig(url, key);
+    if (saved) {
+      this.updateSupabaseStatusPill();
+      this.closeModal('modal-supabase-config');
+      this.showToast('Supabase configuration saved! Reloading session...', 'success');
+      setTimeout(() => window.location.reload(), 1000);
+    } else {
+      this.showToast('Failed to save configuration.', 'error');
+    }
   }
 
   escapeHTML(str) {

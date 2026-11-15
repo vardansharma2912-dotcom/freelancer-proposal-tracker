@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Freelancer Proposal Tracker | Pro SaaS Client & Pipeline Manager</title>
-  <meta name="description" content="Centralized freelance proposal and pipeline management platform for tracking opportunities, clients, deadlines, follow-ups, and performance analytics.">
+  <title>ProposalFlow | Multi-User Freelancer Pipeline & Proposal OS</title>
+  <meta name="description" content="Centralized freelance proposal and pipeline management platform with secure multi-user authentication, cloud persistence, and client tracking.">
   
   <!-- Inter & JetBrains Mono Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,9 +19,199 @@
   <!-- Chart.js & Lucide CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Supabase JS Client v2 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-  <div class="app-container">
+
+  <!-- ==================== INITIAL LOADING SCREEN ==================== -->
+  <div id="auth-initial-loading" style="position: fixed; inset: 0; background: var(--bg-body); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 99999;">
+    <div style="width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, #6366f1, #4f46e5); display: flex; align-items: center; justify-content: center; color: #fff; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4); margin-bottom: 16px;">
+      <i data-lucide="target" style="width: 24px; height: 24px;"></i>
+    </div>
+    <div style="font-weight: 700; font-size: 1.125rem; color: var(--text-primary); margin-bottom: 8px;">ProposalFlow</div>
+    <div style="font-size: 0.8125rem; color: var(--text-muted); display: flex; align-items: center; gap: 8px;">
+      <span class="spinner-small" style="border-top-color: var(--primary-600); border-color: var(--border-color);"></span>
+      Verifying secure session...
+    </div>
+  </div>
+
+  <!-- ==================== AUTHENTICATION SHELL ==================== -->
+  <div id="auth-shell" style="display: none;">
+    <div class="auth-card-container">
+      
+      <!-- Brand Header -->
+      <div class="auth-header-brand">
+        <div class="auth-brand-icon">
+          <i data-lucide="target" style="width: 28px; height: 28px;"></i>
+        </div>
+        <h1 class="auth-title">ProposalFlow</h1>
+        <p class="auth-subtitle">Freelance Pipeline OS & Proposal Tracker</p>
+      </div>
+
+      <!-- VIEW A: LOGIN -->
+      <div class="auth-card-view active" id="auth-view-login">
+        <div class="auth-alert" id="auth-alert-login"></div>
+        <form class="auth-form" id="auth-login-form">
+          <div class="form-group">
+            <label class="form-label" for="login-email">Email Address</label>
+            <input type="email" id="login-email" class="form-control" placeholder="name@company.com" required autocomplete="email">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="login-password">Password</label>
+            <div class="password-input-wrapper">
+              <input type="password" id="login-password" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+              <button type="button" class="password-toggle-btn" data-target="login-password" title="Show/Hide password">
+                <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="auth-options-row">
+            <label class="auth-remember-label">
+              <input type="checkbox" id="login-remember" style="accent-color: var(--primary-600);" checked>
+              <span>Remember me</span>
+            </label>
+            <a href="#" class="auth-link" onclick="window.auth.showAuthView('forgot'); return false;">Forgot password?</a>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-lg" id="btn-submit-login" style="width: 100%; margin-top: var(--space-2);">
+            Sign In to Workspace
+          </button>
+        </form>
+
+        <div class="auth-footer-prompt">
+          Don't have an account? 
+          <a href="#" class="auth-link" onclick="window.auth.showAuthView('register'); return false;">Create an account</a>
+        </div>
+      </div>
+
+      <!-- VIEW B: REGISTER -->
+      <div class="auth-card-view" id="auth-view-register">
+        <div class="auth-alert" id="auth-alert-register"></div>
+        <form class="auth-form" id="auth-register-form">
+          <div class="form-group">
+            <label class="form-label" for="register-name">Full Name</label>
+            <input type="text" id="register-name" class="form-control" placeholder="e.g. Alex Vance" required autocomplete="name">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="register-email">Work Email</label>
+            <input type="email" id="register-email" class="form-control" placeholder="alex@freelance.dev" required autocomplete="email">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="register-password">Password (Min. 6 characters)</label>
+            <div class="password-input-wrapper">
+              <input type="password" id="register-password" class="form-control" placeholder="••••••••" minlength="6" required autocomplete="new-password">
+              <button type="button" class="password-toggle-btn" data-target="register-password" title="Show/Hide password">
+                <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="register-confirm-password">Confirm Password</label>
+            <div class="password-input-wrapper">
+              <input type="password" id="register-confirm-password" class="form-control" placeholder="••••••••" minlength="6" required autocomplete="new-password">
+              <button type="button" class="password-toggle-btn" data-target="register-confirm-password" title="Show/Hide password">
+                <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-lg" id="btn-submit-register" style="width: 100%; margin-top: var(--space-2);">
+            Create Account
+          </button>
+        </form>
+
+        <div class="auth-footer-prompt">
+          Already have an account? 
+          <a href="#" class="auth-link" onclick="window.auth.showAuthView('login'); return false;">Sign in here</a>
+        </div>
+      </div>
+
+      <!-- VIEW C: FORGOT PASSWORD -->
+      <div class="auth-card-view" id="auth-view-forgot">
+        <div class="auth-alert" id="auth-alert-forgot"></div>
+        <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: var(--space-4); line-height: 1.5;">
+          Enter your registered email address and we will send you a password recovery link powered by Supabase Auth.
+        </p>
+
+        <form class="auth-form" id="auth-forgot-form">
+          <div class="form-group">
+            <label class="form-label" for="forgot-email">Account Email</label>
+            <input type="email" id="forgot-email" class="form-control" placeholder="name@company.com" required>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-lg" id="btn-submit-forgot" style="width: 100%;">
+            Send Reset Instructions
+          </button>
+        </form>
+
+        <div class="auth-footer-prompt">
+          Remembered your password? 
+          <a href="#" class="auth-link" onclick="window.auth.showAuthView('login'); return false;">Back to login</a>
+        </div>
+      </div>
+
+      <!-- VIEW D: RESET PASSWORD (FROM RECOVERY LINK) -->
+      <div class="auth-card-view" id="auth-view-reset">
+        <div class="auth-alert" id="auth-alert-reset"></div>
+        <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: var(--space-4); line-height: 1.5;">
+          Create a new secure password for your account.
+        </p>
+
+        <form class="auth-form" id="auth-reset-form">
+          <div class="form-group">
+            <label class="form-label" for="reset-password">New Password (Min. 6 chars)</label>
+            <div class="password-input-wrapper">
+              <input type="password" id="reset-password" class="form-control" placeholder="••••••••" minlength="6" required>
+              <button type="button" class="password-toggle-btn" data-target="reset-password" title="Show/Hide">
+                <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="reset-confirm-password">Confirm New Password</label>
+            <div class="password-input-wrapper">
+              <input type="password" id="reset-confirm-password" class="form-control" placeholder="••••••••" minlength="6" required>
+              <button type="button" class="password-toggle-btn" data-target="reset-confirm-password" title="Show/Hide">
+                <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-lg" id="btn-submit-reset" style="width: 100%;">
+            Update Password & Sign In
+          </button>
+        </form>
+      </div>
+
+      <!-- VIEW E: EMAIL VERIFICATION NOTICE -->
+      <div class="auth-card-view" id="auth-view-verify">
+        <div style="text-align: center; padding: var(--space-4) 0;">
+          <div style="width: 56px; height: 56px; border-radius: 50%; background: var(--success-50); color: var(--success-600); display: flex; align-items: center; justify-content: center; margin: 0 auto var(--space-4);">
+            <i data-lucide="mail-check" style="width: 28px; height: 28px;"></i>
+          </div>
+          <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: var(--space-2);">Confirm Your Email</h2>
+          <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: var(--space-6);">
+            We have sent a verification email to <strong id="auth-verify-email-text" style="color: var(--text-primary);"></strong>. Please click the link inside to verify your account and start using ProposalFlow.
+          </p>
+          <button class="btn btn-primary" onclick="window.auth.showAuthView('login');" style="width: 100%;">
+            Back to Sign In
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==================== PROTECTED APPLICATION SHELL ==================== -->
+  <div class="app-container" id="app-shell" style="display: none;">
     
     <!-- ==================== SIDEBAR ==================== -->
     <aside class="app-sidebar" id="app-sidebar">
@@ -80,7 +270,7 @@
               <a href="#followups" class="nav-link" data-view="followups">
                 <span class="nav-icon"><i data-lucide="bell-ring"></i></span>
                 <span class="nav-label">Follow-ups</span>
-                <span class="nav-counter alert" id="sidebar-followup-badge">2</span>
+                <span class="nav-counter alert" id="sidebar-followup-badge">0</span>
               </a>
             </li>
             <li class="nav-item">
@@ -119,17 +309,20 @@
       </nav>
 
       <div class="sidebar-footer">
-        <div class="sidebar-user-card">
-          <div class="sidebar-user-avatar">V</div>
+        <div class="sidebar-user-card" onclick="window.app.showView('settings');" style="cursor: pointer;" title="Open Profile Settings">
+          <div class="sidebar-user-avatar">U</div>
           <div class="sidebar-user-info">
-            <span class="sidebar-user-name">Vardaan</span>
-            <span class="sidebar-user-role">Full-Stack Freelancer</span>
+            <span class="sidebar-user-name">Loading...</span>
+            <span class="sidebar-user-role">Freelancer</span>
           </div>
+          <button class="btn btn-icon-only btn-sm" onclick="event.stopPropagation(); window.auth.logout();" title="Log Out" style="color: #94a3b8; margin-left: auto;">
+            <i data-lucide="log-out" style="width: 14px; height: 14px;"></i>
+          </button>
         </div>
       </div>
     </aside>
 
-    <!-- ==================== MAIN SHELL ==================== -->
+    <!-- ==================== MAIN CONTENT SHELL ==================== -->
     <main class="app-main">
       
       <!-- Topbar Header -->
@@ -151,7 +344,12 @@
         </div>
 
         <div class="header-right">
-          <!-- Quick Add Button -->
+          <!-- Supabase Status Indicator Pill -->
+          <div class="supabase-status-pill" id="supabase-status-pill" title="Supabase Cloud Engine Status">
+            <span class="status-dot-amber"></span> Local Engine
+          </div>
+
+          <!-- Quick Add Proposal Button -->
           <button class="quick-action-dropdown-btn" onclick="window.opportunities.openCreateModal()">
             <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
             <span class="quick-action-text">New Proposal</span>
@@ -178,10 +376,35 @@
               <div class="notification-list" id="notification-list"></div>
             </div>
           </div>
+
+          <!-- User Profile Dropdown Menu -->
+          <div class="user-menu-wrapper">
+            <div class="user-avatar-btn" id="btn-user-avatar-menu">
+              <div class="user-avatar-circle" id="topbar-user-avatar">U</div>
+              <i data-lucide="chevron-down" style="width: 14px; height: 14px; color: var(--text-muted);"></i>
+            </div>
+
+            <div class="user-dropdown-panel" id="user-dropdown-panel">
+              <div class="user-dropdown-header">
+                <div class="user-dropdown-name" id="dropdown-user-name">User Account</div>
+                <div class="user-dropdown-email" id="dropdown-user-email">user@proposalflow.app</div>
+              </div>
+              <a href="#settings" class="user-dropdown-item" onclick="window.app.closeUserDropdown(); window.app.showView('settings'); return false;">
+                <i data-lucide="user" style="width: 15px; height: 15px;"></i> My Profile
+              </a>
+              <a href="#" class="user-dropdown-item" onclick="window.app.closeUserDropdown(); window.app.openSupabaseConfigModal(); return false;">
+                <i data-lucide="database" style="width: 15px; height: 15px;"></i> Supabase Settings
+              </a>
+              <div style="border-top: 1px solid var(--border-subtle); margin: var(--space-1) 0;"></div>
+              <a href="#" class="user-dropdown-item danger" onclick="window.app.closeUserDropdown(); window.auth.logout(); return false;">
+                <i data-lucide="log-out" style="width: 15px; height: 15px;"></i> Sign Out
+              </a>
+            </div>
+          </div>
         </div>
       </header>
 
-      <!-- Dynamic View Container -->
+      <!-- App Views Body -->
       <div class="app-content">
 
         <!-- ==================== VIEW 1: DASHBOARD ==================== -->
@@ -460,8 +683,8 @@
           <div class="empty-state" id="opportunities-empty-state" style="display: none;">
             <div class="empty-state-icon"><i data-lucide="briefcase"></i></div>
             <div class="empty-state-title">No opportunities found</div>
-            <p class="empty-state-desc">Try clearing your filters or create a new freelance proposal opportunity.</p>
-            <button class="btn btn-primary" onclick="window.opportunities.openCreateModal()">Create Opportunity</button>
+            <p class="empty-state-desc">You haven't tracked any freelance bids yet, or no opportunities match your filter.</p>
+            <button class="btn btn-primary" onclick="window.opportunities.openCreateModal()">Track First Opportunity</button>
           </div>
         </section>
 
@@ -580,7 +803,7 @@
           <div class="empty-state" id="clients-empty-state" style="display: none;">
             <div class="empty-state-icon"><i data-lucide="users"></i></div>
             <div class="empty-state-title">No clients found</div>
-            <p class="empty-state-desc">You haven't added any clients yet or no records match your filter.</p>
+            <p class="empty-state-desc">You haven't added any clients to your directory yet.</p>
             <button class="btn btn-primary" onclick="window.clients.openCreateModal()">Add First Client</button>
           </div>
         </section>
@@ -808,8 +1031,8 @@
         <section class="view-section" id="view-settings">
           <div class="page-header">
             <div class="page-title-group">
-              <h1 class="page-title">Application Settings & Data Backup</h1>
-              <p class="page-subtitle">Manage freelance profile preferences, export data backups, and configure localStorage persistence.</p>
+              <h1 class="page-title">Account Profile & Cloud Settings</h1>
+              <p class="page-subtitle">Manage freelance profile preferences, update security credentials, and export cloud backups.</p>
             </div>
           </div>
 
@@ -819,8 +1042,8 @@
             <div class="card">
               <div class="card-header">
                 <div class="card-title-group">
-                  <h3 class="card-title"><i data-lucide="user" style="width: 18px; height: 18px; color: var(--primary-600);"></i> Freelancer Profile</h3>
-                  <p class="card-subtitle">Details shown in header and default proposals</p>
+                  <h3 class="card-title"><i data-lucide="user" style="width: 18px; height: 18px; color: var(--primary-600);"></i> Personal Profile</h3>
+                  <p class="card-subtitle">Saved in Supabase public.profiles table</p>
                 </div>
               </div>
               <div class="card-body">
@@ -832,7 +1055,7 @@
                     </div>
                     <div class="form-group">
                       <label class="form-label" for="settings-user-email">Email Address</label>
-                      <input type="email" id="settings-user-email" class="form-control" required>
+                      <input type="email" id="settings-user-email" class="form-control" disabled title="Email is managed via Supabase Auth">
                     </div>
                     <div class="form-group">
                       <label class="form-label" for="settings-user-role">Professional Title</label>
@@ -843,86 +1066,95 @@
                       <input type="text" id="settings-user-rate" class="form-control" placeholder="e.g. $95/hr">
                     </div>
                     <button type="submit" class="btn btn-primary" style="margin-top: var(--space-2);">
-                      <i data-lucide="save"></i> Save Profile Settings
+                      <i data-lucide="save"></i> Update Profile
                     </button>
                   </div>
                 </form>
               </div>
             </div>
 
-            <!-- Data Management & Backups -->
+            <!-- Password & Security Card -->
             <div class="card">
               <div class="card-header">
                 <div class="card-title-group">
-                  <h3 class="card-title"><i data-lucide="database" style="width: 18px; height: 18px; color: var(--success-600);"></i> Data Persistence & Backups</h3>
-                  <p class="card-subtitle">All data is securely saved in browser localStorage</p>
+                  <h3 class="card-title"><i data-lucide="shield-check" style="width: 18px; height: 18px; color: var(--success-600);"></i> Password & Security</h3>
+                  <p class="card-subtitle">Update your Supabase authentication credentials</p>
                 </div>
+              </div>
+              <div class="card-body">
+                <form id="settings-password-form">
+                  <div class="form-grid grid-1">
+                    <div class="form-group">
+                      <label class="form-label" for="settings-new-password">New Password</label>
+                      <input type="password" id="settings-new-password" class="form-control" placeholder="••••••••" minlength="6" required>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label" for="settings-confirm-password">Confirm New Password</label>
+                      <input type="password" id="settings-confirm-password" class="form-control" placeholder="••••••••" minlength="6" required>
+                    </div>
+                    <button type="submit" class="btn btn-outline" style="margin-top: var(--space-2);">
+                      <i data-lucide="key"></i> Change Password
+                    </button>
+                  </div>
+                </form>
+
+                <div style="border-top: 1px solid var(--border-color); margin-top: var(--space-5); padding-top: var(--space-4);">
+                  <div style="font-weight: 700; font-size: 0.875rem; margin-bottom: 2px;">Session Management</div>
+                  <p style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: var(--space-3);">Terminate active session and return to login.</p>
+                  <button class="btn btn-danger btn-sm" onclick="window.auth.logout();">
+                    <i data-lucide="log-out"></i> Log Out of Workspace
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Data Management & Backups Card -->
+            <div class="card" style="grid-column: 1 / -1;">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <h3 class="card-title"><i data-lucide="database" style="width: 18px; height: 18px; color: var(--primary-600);"></i> Cloud Data Persistence & Backups</h3>
+                  <p class="card-subtitle">User-isolated PostgreSQL data secured by Supabase Row Level Security (RLS)</p>
+                </div>
+                <button class="btn btn-outline btn-sm" onclick="window.app.openSupabaseConfigModal();">
+                  <i data-lucide="settings-2"></i> Configure Supabase
+                </button>
               </div>
               <div class="card-body" style="display: flex; flex-direction: column; gap: var(--space-4);">
                 
-                <div style="background: var(--bg-surface-secondary); padding: var(--space-4); border-radius: var(--radius-md);">
-                  <div style="font-weight: 700; font-size: 0.875rem; margin-bottom: 4px;">Export Your Data</div>
-                  <p style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: var(--space-3);">
-                    Download clean CSV spreadsheets for Excel/Google Sheets, or full JSON database backups.
-                  </p>
-                  <div style="display: flex; gap: var(--space-2); flex-wrap: wrap;">
-                    <button class="btn btn-secondary btn-sm" onclick="window.storage.exportToCSV('proposals')">
-                      <i data-lucide="file-spreadsheet"></i> Proposals CSV
-                    </button>
-                    <button class="btn btn-secondary btn-sm" onclick="window.storage.exportToCSV('clients')">
-                      <i data-lucide="file-spreadsheet"></i> Clients CSV
-                    </button>
-                    <button class="btn btn-secondary btn-sm" onclick="window.storage.exportToJSON()">
-                      <i data-lucide="download"></i> Full JSON Backup
-                    </button>
-                  </div>
-                </div>
-
-                <div style="background: var(--bg-surface-secondary); padding: var(--space-4); border-radius: var(--radius-md);">
-                  <div style="font-weight: 700; font-size: 0.875rem; margin-bottom: 4px;">Import Data Backup</div>
-                  <p style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: var(--space-3);">
-                    Restore a previously saved JSON database backup.
-                  </p>
-                  <input type="file" id="import-file-input" accept=".json" style="display: none;" onchange="
-                    const file = this.files[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onload = (e) => {
-                        const result = window.storage.importFromJSON(e.target.result);
-                        if (result.success) {
-                          window.app.refreshAll();
-                          window.app.showToast('Database restored successfully', 'success');
-                        } else {
-                          window.app.showToast('Import failed: ' + result.error, 'error');
-                        }
-                      };
-                      reader.readAsText(file);
-                    }
-                  ">
-                  <button class="btn btn-outline btn-sm" onclick="document.getElementById('import-file-input').click()">
-                    <i data-lucide="upload"></i> Select Backup JSON File
-                  </button>
-                </div>
-
-                <div style="border-top: 1px solid var(--border-color); padding-top: var(--space-4); display: flex; flex-direction: column; gap: var(--space-3);">
-                  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-2);">
-                    <div>
-                      <div style="font-weight: 700; font-size: 0.875rem;">Reset Sample Academic Data</div>
-                      <div style="font-size: 0.75rem; color: var(--text-muted);">Restores all realistic demo proposals and clients</div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--space-4);">
+                  <!-- Export Box -->
+                  <div style="background: var(--bg-surface-secondary); padding: var(--space-4); border-radius: var(--radius-md);">
+                    <div style="font-weight: 700; font-size: 0.875rem; margin-bottom: 4px;">Export Your Data</div>
+                    <p style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: var(--space-3);">
+                      Download your cloud records into spreadsheets or JSON backup.
+                    </p>
+                    <div style="display: flex; gap: var(--space-2); flex-wrap: wrap;">
+                      <button class="btn btn-secondary btn-sm" onclick="window.storage.exportToCSV('proposals')">
+                        <i data-lucide="file-spreadsheet"></i> Proposals CSV
+                      </button>
+                      <button class="btn btn-secondary btn-sm" onclick="window.storage.exportToCSV('clients')">
+                        <i data-lucide="file-spreadsheet"></i> Clients CSV
+                      </button>
+                      <button class="btn btn-secondary btn-sm" onclick="window.storage.exportToJSON()">
+                        <i data-lucide="download"></i> JSON Backup
+                      </button>
                     </div>
-                    <button class="btn btn-outline btn-sm" onclick="window.app.resetDemoDataWithConfirm()">
-                      <i data-lucide="refresh-cw"></i> Reset Demo
-                    </button>
                   </div>
 
-                  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-2);">
-                    <div>
-                      <div style="font-weight: 700; font-size: 0.875rem; color: var(--danger-500);">Erase All Data</div>
-                      <div style="font-size: 0.75rem; color: var(--text-muted);">Deletes every single record from localStorage</div>
+                  <!-- Optional Demo Data Box -->
+                  <div style="background: var(--bg-surface-secondary); padding: var(--space-4); border-radius: var(--radius-md);">
+                    <div style="font-weight: 700; font-size: 0.875rem; margin-bottom: 4px;">Sample Demonstration Data</div>
+                    <p style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: var(--space-3);">
+                      Optional: Load realistic sample opportunities and clients into your account for testing.
+                    </p>
+                    <div style="display: flex; gap: var(--space-2); flex-wrap: wrap;">
+                      <button class="btn btn-outline btn-sm" onclick="window.app.loadDemoDataWithConfirm()">
+                        <i data-lucide="download-cloud"></i> Load Sample Demo Data
+                      </button>
+                      <button class="btn btn-danger btn-sm" onclick="window.app.clearMyDataWithConfirm()">
+                        <i data-lucide="trash-2"></i> Erase My Data
+                      </button>
                     </div>
-                    <button class="btn btn-danger btn-sm" onclick="window.app.clearAllDataWithConfirm()">
-                      <i data-lucide="trash-2"></i> Clear Database
-                    </button>
                   </div>
                 </div>
 
@@ -938,7 +1170,41 @@
 
   <!-- ==================== MODALS ==================== -->
 
-  <!-- 1. Opportunity Form Modal -->
+  <!-- 1. Supabase Cloud Configuration Modal -->
+  <div class="modal-backdrop" id="modal-supabase-config">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Supabase Cloud Settings</h3>
+        <button class="modal-close-btn" onclick="window.app.closeModal('modal-supabase-config')">&times;</button>
+      </div>
+      <form id="supabase-config-form">
+        <div class="modal-body">
+          <p style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: var(--space-4); line-height: 1.5;">
+            Connect ProposalFlow to your own Supabase project. All tables and RLS security policies can be deployed in 1-click using the provided <code>supabase_schema.sql</code> file.
+          </p>
+
+          <div class="form-grid grid-1">
+            <div class="form-group">
+              <label class="form-label" for="supabase-cfg-url">Supabase Project URL</label>
+              <input type="url" id="supabase-cfg-url" class="form-control" placeholder="https://your-project.supabase.co" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="supabase-cfg-key">Public Anon / Publishable Key</label>
+              <input type="text" id="supabase-cfg-key" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." required>
+              <span class="form-hint">Only use the safe public anon/publishable key. Never share the service_role secret.</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="window.app.closeModal('modal-supabase-config')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save & Connect</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. Opportunity Form Modal -->
   <div class="modal-backdrop" id="modal-opportunity-form">
     <div class="modal-dialog modal-lg">
       <div class="modal-header">
@@ -1052,7 +1318,7 @@
     </div>
   </div>
 
-  <!-- 2. Client Form Modal -->
+  <!-- 3. Client Form Modal -->
   <div class="modal-backdrop" id="modal-client-form">
     <div class="modal-dialog">
       <div class="modal-header">
@@ -1111,7 +1377,7 @@
     </div>
   </div>
 
-  <!-- 3. Follow-up Form Modal -->
+  <!-- 4. Follow-up Form Modal -->
   <div class="modal-backdrop" id="modal-followup-form">
     <div class="modal-dialog modal-sm">
       <div class="modal-header">
@@ -1156,7 +1422,7 @@
     </div>
   </div>
 
-  <!-- 4. Note Form Modal -->
+  <!-- 5. Note Form Modal -->
   <div class="modal-backdrop" id="modal-note-form">
     <div class="modal-dialog">
       <div class="modal-header">
@@ -1200,7 +1466,7 @@
     </div>
   </div>
 
-  <!-- 5. Opportunity Details Modal -->
+  <!-- 6. Opportunity Details Modal -->
   <div class="modal-backdrop" id="modal-opp-detail">
     <div class="modal-dialog modal-lg">
       <div class="modal-header">
@@ -1211,7 +1477,7 @@
     </div>
   </div>
 
-  <!-- 6. Client Profile Modal -->
+  <!-- 7. Client Profile Modal -->
   <div class="modal-backdrop" id="modal-client-profile">
     <div class="modal-dialog modal-lg">
       <div class="modal-header">
@@ -1222,7 +1488,7 @@
     </div>
   </div>
 
-  <!-- 7. Calendar Day Agenda Modal -->
+  <!-- 8. Calendar Day Agenda Modal -->
   <div class="modal-backdrop" id="modal-agenda">
     <div class="modal-dialog">
       <div class="modal-header">
@@ -1239,7 +1505,7 @@
     </div>
   </div>
 
-  <!-- 8. Universal Confirmation Modal -->
+  <!-- 9. Universal Confirmation Modal -->
   <div class="modal-backdrop" id="modal-confirm">
     <div class="modal-dialog modal-sm">
       <div class="modal-header">
@@ -1260,6 +1526,8 @@
   <div class="toast-container" id="toast-container"></div>
 
   <!-- Application Logic Modules -->
+  <script src="js/supabase-config.js"></script>
+  <script src="js/auth.js"></script>
   <script src="js/storage.js"></script>
   <script src="js/dashboard.js"></script>
   <script src="js/opportunities.js"></script>

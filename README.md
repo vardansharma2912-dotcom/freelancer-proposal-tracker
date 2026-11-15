@@ -1,40 +1,61 @@
-# Freelancer Proposal Tracker (ProposalFlow)
+# ProposalFlow | Freelancer Proposal & Pipeline Tracker
 
 A modern, high-performance, responsive web application engineered for independent software engineers, consultants, designers, and creative freelancers to centrally manage project opportunities, client relationships, proposal pipelines, deadlines, follow-up touchpoints, and financial performance analytics.
 
-Developed strictly with **HTML5, CSS3, and Vanilla JavaScript (ES6+)** with **zero frontend frameworks** and complete client-side data persistence using browser `localStorage`.
+Developed strictly with **HTML5, CSS3, and Vanilla JavaScript (ES6+)** with **zero frontend frameworks**, backed by **Supabase Auth** and **PostgreSQL with Row Level Security (RLS)** for true multi-user data isolation.
 
 ---
 
-## 1. Project Overview
+## 1. Architecture Highlights
 
-Freelancers and digital agencies juggle multiple bidding platforms (Upwork, Contra, Fiverr Pro, LinkedIn, Direct Outreach, Referrals) alongside asynchronous communication threads. Without a centralized tracking mechanism, freelancers miss application deadlines, forget critical follow-ups, lose visibility over submitted bids, and lack data on which channels yield the highest return on investment.
-
-**ProposalFlow** solves these challenges by providing an executive-grade SaaS dashboard with dynamic Kanban boards, interactive deadline calendars, structured client directories, automated follow-up scheduling, and real-time financial KPI analytics.
-
----
-
-## 2. Problem Statement
-
-Freelance bidding workflows typically suffer from:
-1. **Scattered Proposals**: Submissions scattered across emails, chat threads, spreadsheets, and marketplace portals.
-2. **Missed Follow-ups**: Lost client opportunities due to lack of timely, structured check-ins after submitting proposals.
-3. **Deadlines & Clashing Commitments**: Inability to visualize proposal cut-off dates alongside project delivery milestones.
-4. **Opaque Financial Metrics**: Difficulty calculating actual win rates, deal sizes, pipeline values, and platform ROI.
-5. **Overhead & Complexity**: Heavy SaaS tools require subscriptions, cloud accounts, or complex backend setups that are impractical for quick academic evaluation or lightweight solo operations.
+- **Multi-Tenant User Isolation**: Every user has their own isolated account. User A can never access, edit, or see records belonging to User B.
+- **Supabase Cloud Backend**: Authenticated sessions, JWT verification, and PostgreSQL tables with strict Row Level Security policies (`auth.uid() = user_id`).
+- **Zero Frontend Frameworks**: 100% native Web Standards (HTML5 Semantic Elements, Modern CSS Custom Properties, ES6+ Object-Oriented JavaScript Modules).
+- **GitHub Pages Static Hosting**: Fully compatible with static web hosting without requiring a Node.js backend server.
+- **Zero Hardcoded Identities**: New user accounts start with an empty, clean workspace. No hardcoded names or pre-populated demo records for real accounts.
+- **Optional On-Demand Demo Data**: A "Load Sample Demo Data" action is provided in Settings for evaluation purposes, strictly tagged to the requesting user.
 
 ---
 
-## 3. Project Objectives
+## 2. Authentication System (Supabase Auth)
 
-- **100% Framework-Free Architecture**: Deliver a complete SaaS product using pure native Web Standards (HTML5, CSS3, ES6+).
-- **Zero Backend Footprint**: Execute entirely client-side using browser `localStorage` with full offline capability, import/export portability, and instant data persistence.
-- **Dynamic Data Integrity**: Real-time recalculation of pipeline metrics, win/loss rates, platform ROI charts, and deadline countdowns without hardcoded placeholders.
-- **Academic Rigor & Code Maintainability**: Modular file architecture with clean separation of concerns, semantic design system tokens, and comprehensive automated test coverage.
+1. **Sign In (Login)**:
+   - Email and password authentication with client-side format validation.
+   - Show/Hide password toggle.
+   - "Remember Me" session persistence.
+   - Comprehensive error alerts (invalid credentials, rate limiting).
+2. **Registration (Sign Up)**:
+   - Captures Full Name, Work Email, Password, and Confirm Password.
+   - Enforces minimum 6-character password length and exact confirmation match.
+   - Automatically initializes user profile record in `public.profiles`.
+   - Supports Supabase email confirmation flows with an email verification notice screen.
+3. **Forgot & Reset Password**:
+   - Request password recovery instructions via email.
+   - Secure token handling from Supabase recovery redirect URL (`#access_token=...&type=recovery`).
+   - Dedicated password reset view with validation and instant session update.
+4. **Session Management & Sign Out**:
+   - Automatic session restoration on page reload (`supabase.auth.getSession()`).
+   - Initial loading state prevents unauthorized dashboard flash.
+   - Session termination clears in-memory user cache and redirects to login.
 
 ---
 
-## 4. Key Features & Modules
+## 3. Database Security & Row Level Security (RLS)
+
+All database entities are defined in [`supabase_schema.sql`](./supabase_schema.sql):
+
+| Table | Purpose | Security Policy (RLS) |
+|---|---|---|
+| `profiles` | Extended user identity, role, hourly rate | `auth.uid() = id` (SELECT, UPDATE, INSERT) |
+| `clients` | Organizations, key contacts, locations | `auth.uid() = user_id` (SELECT, INSERT, UPDATE, DELETE) |
+| `opportunities` | Proposals, bids, values, currencies, stages | `auth.uid() = user_id` (SELECT, INSERT, UPDATE, DELETE) |
+| `followups` | Time-sensitive reminders and touchpoints | `auth.uid() = user_id` (SELECT, INSERT, UPDATE, DELETE) |
+| `notes` | Research briefs, cover letters, meeting minutes | `auth.uid() = user_id` (SELECT, INSERT, UPDATE, DELETE) |
+| `activities` | User audit log | `auth.uid() = user_id` (SELECT, INSERT) |
+
+---
+
+## 4. Application Modules
 
 ### 4.1 Executive Dashboard
 - **Real-Time KPIs**: Total Opportunities, Active Pipeline Value ($), Realized Earnings ($), Proposal Win Rate (%), Submitted Bids, In-Review Opportunities, and Active Follow-ups.
@@ -58,7 +79,7 @@ Freelance bidding workflows typically suffer from:
   3. *Interview & Negotiation*
   4. *Accepted (Won)*
   5. *Rejected & Withdrawn*
-- HTML5 Drag and Drop API integration with instant persistence, visual dropzone highlights, and automatic KPI recalculation.
+- Native HTML5 Drag and Drop API integration with dropzone highlights and automatic KPI recalculation.
 - Stage-level value aggregators (e.g., "$24,500 across 3 proposals").
 - 1-click toggle between Kanban Pipeline view and Tabular view.
 
@@ -81,30 +102,13 @@ Freelance bidding workflows typically suffer from:
 - Day Agenda Modal detailing all milestones for any clicked date with direct links to view or schedule events.
 
 ### 4.7 Client & Proposal Notes
-- Searchable markdown-friendly notes repository.
-- Tagging system (e.g., `#Security`, `#Milestones`, `#Architecture`).
+- Searchable notes repository with tagging (`#Security`, `#Milestones`, `#Architecture`).
 - Direct association with specific clients and opportunities with automatic timestamping.
 
 ### 4.8 Deep Performance Analytics
 - Win Rate %, Rejection Rate %, Average Opportunity Size, and Average Won Deal Value.
 - Platform ROI Conversion Matrix: Total Bids, Won Deals, Active Reviews, Rejections, Win Rate %, Total Earned, and Average Project Value per marketplace.
 - Platform Cash Generation bar chart and Deal Outcome ratio doughnut chart.
-
-### 4.9 Data Persistence & Utility Controls
-- Instant browser `localStorage` synchronization across all tabs and reloads.
-- Pre-seeded with 12 realistic proposals, 6 client companies, 8 follow-ups, and notes.
-- **Export to CSV**: Separate structured spreadsheets for Proposals and Clients.
-- **Export to JSON**: Full single-file database backup.
-- **Import from JSON**: Upload backup file with validation.
-- **Reset Demo Data**: Restore default academic demonstration state at any time.
-- **Erase All Data**: Complete database wipe with safety confirmation dialog.
-
-### 4.10 UI/UX & Design System
-- **Theme Engine**: Smooth toggle between Light and Dark modes with automatic preference persistence.
-- **Collapsible Sidebar**: Compact mode for maximizing screen real estate on desktop.
-- **Global Omnisearch**: `Ctrl + K` instant lookup searching proposals, clients, and notes simultaneously.
-- **Notification Dropdown**: Actionable alerts for overdue follow-ups and approaching deadlines.
-- **Responsive Layout**: Mobile drawer navigation, adaptive tables, and fluid card grids.
 
 ---
 
@@ -115,7 +119,8 @@ Freelance bidding workflows typically suffer from:
 | **Structure** | HTML5 | Semantic markup, accessible forms, modal dialogs |
 | **Styling** | CSS3 (Custom Variables) | Responsive layout, design tokens, light/dark theme engine |
 | **Logic** | Vanilla JavaScript (ES6+) | Object-oriented modular controllers, router, state management |
-| **Persistence** | Browser `localStorage` API | Zero-server persistent client storage |
+| **Authentication** | Supabase Auth | User registration, login, session persistence, password reset |
+| **Database** | Supabase PostgreSQL + RLS | Isolated multi-tenant cloud storage |
 | **Visualizations** | Chart.js (v4.x via CDN) | Interactive canvas-based dynamic charts |
 | **Icons** | Lucide Icons (via CDN) | Professional SVG iconography |
 | **Testing** | Node.js Test Harness & Headless Chrome | Automated end-to-end browser integration testing |
@@ -127,17 +132,21 @@ Freelance bidding workflows typically suffer from:
 ```
 freelancer-proposal-tracker/
 │
-├── index.html              # Main application shell, views and modals
-├── README.md               # Project documentation and user guide
+├── index.html              # Main application shell, auth views and modals
+├── supabase_schema.sql     # PostgreSQL database schema and RLS policies
+├── SUPABASE_SETUP.md       # Step-by-step Supabase cloud configuration guide
+├── README.md               # Project documentation and architectural overview
 ├── .gitignore              # Git ignore rules for OS and temporary files
 │
 ├── css/
-│   ├── style.css           # Design tokens, reset, typography, themes & app shell
+│   ├── style.css           # Design tokens, reset, typography, auth views, themes & app shell
 │   ├── components.css      # Buttons, cards, badges, tables, modals, Kanban & calendar
 │   └── responsive.css      # Media queries, mobile drawer, responsive breakpoints
 │
 └── js/
-    ├── storage.js          # LocalStorage CRUD engine, seed dataset, CSV/JSON export/import
+    ├── supabase-config.js  # Supabase client manager & isolated multi-user fallback engine
+    ├── auth.js             # Authentication controller (login, signup, reset, session)
+    ├── storage.js          # Multi-user storage engine with Supabase cloud persistence
     ├── app.js              # Application orchestrator, router, theme, global search, toasts
     ├── dashboard.js        # KPI calculations, Chart.js instances, activity feed
     ├── opportunities.js    # Opportunity CRUD, filters, sorting, table renderer
@@ -151,80 +160,41 @@ freelancer-proposal-tracker/
 
 ---
 
-## 7. Installation & Running Locally
+## 7. How to Setup and Run Locally
 
-### Option 1: Direct Browser Launch (Simplest)
-Because ProposalFlow is built purely with HTML, CSS, and Vanilla JavaScript, no build step or node installation is required:
+### Option 1: Direct Browser Launch
+Because ProposalFlow is built purely with native Web Standards, no build step or node installation is required:
 1. Clone or download the repository.
-2. Double-click `index.html` to open it directly in any modern browser (Chrome, Edge, Firefox, Safari).
+2. Double-click `index.html` to open it directly in any modern browser.
+3. Sign up with any test account (e.g., `user@test.com`) to begin.
 
-### Option 2: Local HTTP Server (Recommended)
-Running through a lightweight local server ensures optimal handling of CDNs and local storage:
-
-Using Python:
-```bash
-# Python 3
+### Option 2: Local Web Server
+```powershell
 python -m http.server 8000
 ```
-Then visit: `http://localhost:8000`
+Navigate to `http://localhost:8000`.
 
-Using Node.js:
-```bash
-# Using npx serve
-npx serve .
-```
+### Option 3: Connect to Live Supabase Cloud
+Read the step-by-step instructions in [`SUPABASE_SETUP.md`](./SUPABASE_SETUP.md).
 
 ---
 
-## 8. Data Storage Explanation
+## 8. Multi-User Verification & Security Tests
 
-All application state is saved under organized namespaces in browser `localStorage`:
-
-- `ftp_proposals`: Array of all tracked proposals and opportunities.
-- `ftp_clients`: Array of client organizations and primary contacts.
-- `ftp_followups`: Array of follow-up reminder items with due dates and completion states.
-- `ftp_notes`: Array of client and project discovery notes.
-- `ftp_activities`: Audit log of user actions for the activity feed.
-- `ftp_settings`: App preferences including selected theme (`light` / `dark`) and user profile info.
-
-Data persists across page reloads, browser restarts, and offline sessions. To transfer data across devices, use the **Export Full JSON Backup** button in Settings and restore it using **Import Data Backup**.
-
----
-
-## 9. Verification & Automated Testing
-
-The application includes an automated headless browser test suite (`scratch/test_suite.js`) executing via Chrome DevTools Protocol (CDP) on Node 24:
-
-- **14 Test Suites Executed**:
-  1. LocalStorage seed data initialization.
-  2. Dynamic KPI math verification.
-  3. Chart.js canvas initialization.
-  4. View navigation routing (all 9 views).
-  5. Opportunity creation CRUD.
-  6. Opportunity update & persistence.
-  7. Kanban drag-and-drop workflow status updates.
-  8. Client creation and linked project aggregation.
-  9. Follow-up reminder completion toggling.
-  10. Calendar generation & day agenda modal inspection.
-  11. Global search indexing & results dropdown.
-  12. Dark/Light theme switching & attribute toggling.
-  13. Opportunity deletion and cascading cleanup.
-  14. Browser runtime error audit: **Zero uncaught exceptions or console errors**.
+Run the automated test suite (`scratch/test_multiuser.js`) to verify:
+- Registration of User A.
+- Clean initial workspace for User A.
+- Creation of records under User A.
+- Sign out.
+- Registration of User B.
+- Verification that User A's records are completely invisible to User B.
+- User B adds separate records.
+- User A logs back in and only sees User A's original records.
+- Zero runtime errors or security leaks.
 
 ---
 
-## 10. Future Enhancements
+## 9. Live Deployment
 
-- Multi-currency automatic conversion using live European Central Bank / OpenExchange rates.
-- Client proposal template generator with PDF export capabilities.
-- Webhook integrations (Zapier / Make) for incoming lead notifications.
-- PWA (Progressive Web App) manifest and ServiceWorker for complete offline desktop installation.
-
----
-
-## 11. Author & Academic Evaluation
-
-- **Project Name**: Freelancer Proposal Tracker (ProposalFlow)
-- **Author**: Vardaan
-- **Role**: Full-Stack Frontend Engineer & Designer
-- **License**: MIT License
+- **GitHub Repository**: [https://github.com/vardansharma2912-dotcom/freelancer-proposal-tracker](https://github.com/vardansharma2912-dotcom/freelancer-proposal-tracker)
+- **Live Deployed Website**: [https://vardansharma2912-dotcom.github.io/freelancer-proposal-tracker/](https://vardansharma2912-dotcom.github.io/freelancer-proposal-tracker/)
