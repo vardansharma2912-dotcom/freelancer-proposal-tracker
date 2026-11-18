@@ -648,27 +648,14 @@ class DashboardModule {
   }
 
   renderCharts() {
-    if (typeof Chart === 'undefined') {
-      console.warn('Chart.js library not loaded yet.');
-      return;
-    }
-
-    const proposals = window.storage.getProposals();
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    const gridColor = isDark ? '#273549' : '#e2e8f0';
-    const textColor = isDark ? '#94a3b8' : '#64748b';
-
-    // 1. Monthly Submissions Chart
-    this.renderMonthlyChart(proposals, gridColor, textColor);
-
-    // 2. Status Distribution Doughnut Chart
-    this.renderStatusChart(proposals, isDark);
-
-    // 3. Platform Distribution Chart
-    this.renderPlatformChart(proposals, gridColor, textColor);
-
-    // 4. Financials Pipeline vs Won Value
-    this.renderFinancialsChart(proposals, gridColor, textColor);
+    // Dashboard charts removed
+    Object.keys(this.charts).forEach(k => {
+      if (this.charts[k]) {
+        try { this.charts[k].destroy(); } catch (e) {}
+        this.charts[k] = null;
+      }
+    });
+    return;
   }
 
   renderMonthlyChart(proposals, gridColor, textColor) {

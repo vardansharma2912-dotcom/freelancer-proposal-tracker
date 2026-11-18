@@ -46,7 +46,7 @@ Independent freelancers, consultants, and contractors typically manage new proje
 All screenshots below illustrate **ProposalFlow** populated with realistic demonstration data, demonstrating full functionality without empty zeroes.
 
 ### 2.1 Executive Analytics Dashboard
-*Comprehensive KPI metric cards ($49.2K Pipeline Value, $18.5K Won, 75% Win Rate), 4 interactive Chart.js visualizations, upcoming deadline reminders, and an audit trail.*
+*Comprehensive KPI metric cards ($49.2K Pipeline Value, $18.5K Won, 75% Win Rate), upcoming deadline reminders, and an audit trail.*
 ![Executive Analytics Dashboard](https://raw.githubusercontent.com/vardansharma2912-dotcom/freelancer-proposal-tracker/3b949a15993e5fbcf24bbbe8fa9d9681bc13e33f/assets/screenshots/dashboard.png)
 
 ---
