@@ -121,9 +121,8 @@ All screenshots below illustrate **ProposalFlow** populated with realistic demon
   - *Estimated Pipeline vs. Realized Earnings* (Grouped Bar Chart)
 - High-level KPIs: Proposal Win Rate, Average Deal Size, and Platform Revenue Yield.
 
-### 3.9 Data Portability & Backup
-- **CSV Export:** Export proposals or clients to formatted CSV files with one click.
-- **JSON Backup:** Download complete application state as a single JSON file.
+### 3.9 Workspace Settings & Preferences
+- Manage freelancer profile, display name, professional role, hourly billing rate, preferred currency, and target platform.
 - **Defensive Error Handling:** Safe `try/catch` wrappers prevent application crashes even if local storage contains malformed JSON.
 
 ---
