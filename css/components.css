@@ -1068,7 +1068,6 @@ textarea.form-control {
   width: calc(100vw - 2rem);
   box-sizing: border-box;
 }
-}
 
 .toast {
   pointer-events: auto;

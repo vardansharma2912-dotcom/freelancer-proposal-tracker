@@ -421,7 +421,13 @@ class AppController {
 
     const saved = window.storage.saveUserProfile(profileData);
     if (saved) {
+      const loadSampleBox = document.getElementById('onboard-load-sample');
+      const shouldSeed = loadSampleBox ? loadSampleBox.checked : true;
+      if (shouldSeed && window.storage.getProposals().length === 0) {
+        window.storage.loadSampleDemoData();
+      }
       this.showAppShell();
+      this.refreshAll();
       this.showToast(`Welcome, ${name}! Your freelance workspace is set up.`, 'success');
     } else {
       if (alertBox) {

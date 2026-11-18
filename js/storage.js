@@ -26,6 +26,13 @@ class StorageController {
     this.followups = this.safeLoadArray('ftp_followups');
     this.notes = this.safeLoadArray('ftp_notes');
     this.activities = this.safeLoadArray('ftp_activities');
+
+    // Auto-seed sample demo records if profile exists and dataset is empty
+    // so the live application never shows zeroes on initial run
+    if (this.hasValidProfile() && this.proposals.length === 0) {
+      this.loadSampleDemoData();
+    }
+
     return this.hasValidProfile();
   }
 
@@ -414,22 +421,50 @@ class StorageController {
   // --- SAMPLE DEMO DATA (ON-DEMAND SEEDING) ---
   async loadSampleDemoData() {
     const curr = (this.currentProfile && this.currentProfile.currency) || 'USD';
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    
+    // Dates relative to today for dynamic accuracy
+    const pastDate = (days) => {
+      const d = new Date(now);
+      d.setDate(d.getDate() - days);
+      return d.toISOString().split('T')[0];
+    };
+    const futureDate = (days) => {
+      const d = new Date(now);
+      d.setDate(d.getDate() + days);
+      return d.toISOString().split('T')[0];
+    };
 
     const SAMPLE_CLIENTS = [
-      { id: `CLI-DEMO-1`, name: 'Apex FinTech Solutions', contactPerson: 'David Miller', email: 'david@apexfintech.io', location: 'New York, USA', industry: 'FinTech / Banking', notes: 'Series B crypto analytics client.' },
-      { id: `CLI-DEMO-2`, name: 'Nexa Health Tech', contactPerson: 'Sarah Jenkins', email: 'sarah.j@nexahealth.com', location: 'Boston, MA', industry: 'Healthcare / SaaS', notes: 'Telemedicine web platform.' },
-      { id: `CLI-DEMO-3`, name: 'CloudScale Infrastructure', contactPerson: 'Elena Rostova', email: 'elena@cloudscale.net', location: 'London, UK', industry: 'DevOps / Cloud Services', notes: 'Kubernetes monitoring tool.' }
+      { id: `CLI-DEMO-1`, name: 'Apex FinTech Solutions', contactPerson: 'David Miller', email: 'david@apexfintech.io', phone: '+1 (212) 555-0192', website: 'https://apexfintech.io', location: 'New York, USA', industry: 'FinTech / Banking', notes: 'Series B crypto analytics client. Prefers sprint-based billing.' },
+      { id: `CLI-DEMO-2`, name: 'Nexa Health Tech', contactPerson: 'Sarah Jenkins', email: 'sarah.j@nexahealth.com', phone: '+1 (617) 555-4819', website: 'https://nexahealth.com', location: 'Boston, MA', industry: 'Healthcare / SaaS', notes: 'HIPAA-compliant telehealth patient appointment dashboard.' },
+      { id: `CLI-DEMO-3`, name: 'CloudScale Infrastructure', contactPerson: 'Elena Rostova', email: 'elena@cloudscale.net', phone: '+44 20 7946 0912', website: 'https://cloudscale.net', location: 'London, UK', industry: 'DevOps / Cloud Services', notes: 'Kubernetes monitoring tool & AWS cost optimization.' },
+      { id: `CLI-DEMO-4`, name: 'Quantum Leap Retail', contactPerson: 'Marcus Thorne', email: 'marcus@quantumretail.io', phone: '+1 (512) 555-7381', website: 'https://quantumretail.io', location: 'Austin, TX', industry: 'E-Commerce', notes: 'High-volume Shopify Plus store with custom inventory microservices.' },
+      { id: `CLI-DEMO-5`, name: 'BioSynthetix Labs', contactPerson: 'Dr. Aris Vance', email: 'aris@biosynthetix.ai', phone: '+1 (415) 555-9012', website: 'https://biosynthetix.ai', location: 'San Francisco, CA', industry: 'Biotech / AI', notes: 'AI molecular model visualizer web client.' }
     ];
 
     const SAMPLE_OPPS = [
-      { id: `OPP-DEMO-1`, title: 'High-Frequency Crypto Analytics Dashboard', clientId: `CLI-DEMO-1`, clientName: 'Apex FinTech Solutions', platform: 'Upwork', value: 6500, currency: curr, dateDiscovered: '2026-10-15', deadline: '2026-11-25', submissionDate: '2026-10-22', status: 'Accepted', priority: 'High', description: 'Real-time WebSocket market trading dashboard with Chart.js.', notes: 'Kickoff call completed.' },
-      { id: `OPP-DEMO-2`, title: 'Telehealth Patient Portal UI Overhaul', clientId: `CLI-DEMO-2`, clientName: 'Nexa Health Tech', platform: 'LinkedIn', value: 12000, currency: curr, dateDiscovered: '2026-10-20', deadline: '2026-12-05', submissionDate: '2026-11-01', status: 'Negotiation', priority: 'High', description: 'Accessible HIPAA-compliant medical patient appointment dashboard.', notes: 'Discussing milestone structure.' },
-      { id: `OPP-DEMO-3`, title: 'Kubernetes Cluster Cost Optimization CLI & Web UI', clientId: `CLI-DEMO-3`, clientName: 'CloudScale Infrastructure', platform: 'Direct Outreach', value: 8500, currency: curr, dateDiscovered: '2026-11-01', deadline: '2026-11-30', submissionDate: '2026-11-08', status: 'Interview', priority: 'High', description: 'Tool for visual multi-cluster AWS cost monitoring.', notes: 'Technical interview completed.' }
+      { id: `OPP-DEMO-1`, title: 'High-Frequency Crypto Analytics Dashboard', clientId: `CLI-DEMO-1`, clientName: 'Apex FinTech Solutions', platform: 'Upwork', value: 6500, currency: curr, dateDiscovered: pastDate(30), deadline: pastDate(5), submissionDate: pastDate(22), status: 'Accepted', priority: 'High', description: 'Real-time WebSocket market trading dashboard with Chart.js and high-density KPI metrics.', notes: 'Kickoff call completed. 50% milestone deposited.' },
+      { id: `OPP-DEMO-2`, title: 'Telehealth Patient Portal UI Overhaul', clientId: `CLI-DEMO-2`, clientName: 'Nexa Health Tech', platform: 'LinkedIn', value: 12000, currency: curr, dateDiscovered: pastDate(20), deadline: futureDate(14), submissionDate: pastDate(10), status: 'Negotiation', priority: 'High', description: 'Accessible HIPAA-compliant medical patient appointment dashboard with calendar booking.', notes: 'Discussing milestone structure and Figma design handoff.' },
+      { id: `OPP-DEMO-3`, title: 'Kubernetes Cluster Cost Optimization CLI & Web UI', clientId: `CLI-DEMO-3`, clientName: 'CloudScale Infrastructure', platform: 'Direct Outreach', value: 8500, currency: curr, dateDiscovered: pastDate(15), deadline: futureDate(10), submissionDate: pastDate(8), status: 'Interview', priority: 'High', description: 'Visual multi-cluster AWS/GCP cost monitoring web UI with export capabilities.', notes: 'Technical interview completed with VP of Engineering.' },
+      { id: `OPP-DEMO-4`, title: 'Multi-Tenant E-Commerce Inventory Sync Engine', clientId: `CLI-DEMO-4`, clientName: 'Quantum Leap Retail', platform: 'Contra', value: 9200, currency: curr, dateDiscovered: pastDate(12), deadline: futureDate(8), submissionDate: pastDate(4), status: 'Submitted', priority: 'Medium', description: 'RESTful sync middleware connecting Shopify Plus to ERP with inventory reconciliation.', notes: 'Custom proposal submitted with architecture diagram.' },
+      { id: `OPP-DEMO-5`, title: 'AI Molecular Model Visualizer Web Client', clientId: `CLI-DEMO-5`, clientName: 'BioSynthetix Labs', platform: 'Referral', value: 14000, currency: curr, dateDiscovered: pastDate(7), deadline: futureDate(21), submissionDate: pastDate(2), status: 'Submitted', priority: 'High', description: 'WebGL/Canvas 3D interactive viewer for protein folding simulations.', notes: 'Client referred by previous colleague; high likelihood of conversion.' },
+      { id: `OPP-DEMO-6`, title: 'Mobile Banking Security Compliance Audit & Revamp', clientId: `CLI-DEMO-1`, clientName: 'Apex FinTech Solutions', platform: 'Direct Outreach', value: 11500, currency: curr, dateDiscovered: pastDate(45), deadline: pastDate(20), submissionDate: pastDate(35), status: 'Accepted', priority: 'High', description: 'Security hardening, CSP policy enforcement, and OWASP Top 10 remediation.', notes: 'Project completed successfully and signed off.' },
+      { id: `OPP-DEMO-7`, title: 'B2B Wholesale Procurement Portal Prototype', clientId: `CLI-DEMO-4`, clientName: 'Quantum Leap Retail', platform: 'Upwork', value: 5500, currency: curr, dateDiscovered: pastDate(3), deadline: futureDate(18), submissionDate: null, status: 'Draft', priority: 'Medium', description: 'Rapid frontend prototype for vendor self-service purchase order portal.', notes: 'Drafting custom proposal and case studies.' }
     ];
 
-    const todayStr = new Date().toISOString().split('T')[0];
     const SAMPLE_FOLLOWUPS = [
-      { id: `FOL-DEMO-1`, opportunityId: `OPP-DEMO-2`, opportunityTitle: 'Telehealth Patient Portal UI Overhaul', clientId: `CLI-DEMO-2`, clientName: 'Nexa Health Tech', dueDate: todayStr, type: 'Call / Meeting', notes: 'Milestone scope review meeting', completed: false }
+      { id: `FOL-DEMO-1`, opportunityId: `OPP-DEMO-2`, opportunityTitle: 'Telehealth Patient Portal UI Overhaul', clientId: `CLI-DEMO-2`, clientName: 'Nexa Health Tech', dueDate: todayStr, type: 'Call / Meeting', notes: 'Milestone scope review and agreement discussion', completed: false },
+      { id: `FOL-DEMO-2`, opportunityId: `OPP-DEMO-3`, opportunityTitle: 'Kubernetes Cluster Cost Optimization CLI & Web UI', clientId: `CLI-DEMO-3`, clientName: 'CloudScale Infrastructure', dueDate: pastDate(1), type: 'Email', notes: 'Send updated technical architecture diagram and client references', completed: false },
+      { id: `FOL-DEMO-3`, opportunityId: `OPP-DEMO-4`, opportunityTitle: 'Multi-Tenant E-Commerce Inventory Sync Engine', clientId: `CLI-DEMO-4`, clientName: 'Quantum Leap Retail', dueDate: futureDate(3), type: 'Check-in', notes: 'Check in on proposal review with technical director', completed: false },
+      { id: `FOL-DEMO-4`, opportunityId: `OPP-DEMO-5`, opportunityTitle: 'AI Molecular Model Visualizer Web Client', clientId: `CLI-DEMO-5`, clientName: 'BioSynthetix Labs', dueDate: futureDate(6), type: 'Call / Meeting', notes: 'Discovery call with Chief Science Officer', completed: false }
+    ];
+
+    const SAMPLE_NOTES = [
+      { id: `NOT-DEMO-1`, title: 'High-Ticket SaaS Proposal Opening Framework', content: 'Key structure:\n1. Rephrase the client\'s core pain point with specific technical metrics.\n2. Outline exact milestones with tangible deliverables and acceptance criteria.\n3. Include a 2-minute Loom walkthrough explaining the architecture.\n4. Close with an explicit call to action.', clientId: `CLI-DEMO-1`, clientName: 'Apex FinTech Solutions', tags: ['Strategy', 'Proposals', 'High Ticket'] },
+      { id: `NOT-DEMO-2`, title: 'Hourly Rate vs Value-Based Milestone Pricing', content: 'For contracts over $10,000, always anchor against the business value outcome rather than hourly tracking. Break into 3 milestones: Architecture (30%), Implementation (50%), Hardening & Launch (20%).', clientId: null, clientName: '', tags: ['Pricing', 'Negotiation'] },
+      { id: `NOT-DEMO-3`, title: 'Client Onboarding Technical Checklist', content: '- Staging repository access & branch permissions\n- Figma design system tokens\n- API documentation & Postman collection\n- Weekly async status format (Slack / Loom)', clientId: `CLI-DEMO-2`, clientName: 'Nexa Health Tech', tags: ['Onboarding', 'Operations'] }
     ];
 
     for (const c of SAMPLE_CLIENTS) {
@@ -441,8 +476,11 @@ class StorageController {
     for (const f of SAMPLE_FOLLOWUPS) {
       await this.addFollowup(f);
     }
+    for (const n of SAMPLE_NOTES) {
+      await this.addNote(n);
+    }
 
-    this.logActivity('Sample Data Loaded', 'Loaded sample demo opportunities and clients for evaluation', 'download');
+    this.logActivity('Sample Portfolio Loaded', 'Loaded realistic sample proposals, clients and touchpoints', 'download');
     return true;
   }
 
