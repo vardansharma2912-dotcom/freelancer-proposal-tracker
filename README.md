@@ -47,31 +47,31 @@ All screenshots below illustrate **ProposalFlow** populated with realistic demon
 
 ### 2.1 Executive Analytics Dashboard
 *Comprehensive KPI metric cards ($49.2K Pipeline Value, $18.5K Won, 75% Win Rate), 4 interactive Chart.js visualizations, upcoming deadline reminders, and an audit trail.*
-![Executive Analytics Dashboard](assets/screenshots/dashboard.png)
+![Executive Analytics Dashboard](https://raw.githubusercontent.com/vardansharma2912-dotcom/freelancer-proposal-tracker/3b949a15993e5fbcf24bbbe8fa9d9681bc13e33f/assets/screenshots/dashboard.png)
 
 ---
 
 ### 2.2 Proposals Kanban Pipeline
 *Visual 5-stage drag-and-drop workflow tracking opportunities through Draft, Submitted, Interview, Accepted, and Declined states.*
-![Proposals Kanban Pipeline](assets/screenshots/kanban.png)
+![Proposals Kanban Pipeline](https://raw.githubusercontent.com/vardansharma2912-dotcom/freelancer-proposal-tracker/3b949a15993e5fbcf24bbbe8fa9d9681bc13e33f/assets/screenshots/kanban.png)
 
 ---
 
 ### 2.3 Client Relationship Directory (CRM)
 *Centralized enterprise client directory showing company profiles, contact details, active contracts, and cumulative project values.*
-![Client Relationship Directory](assets/screenshots/clients.png)
+![Client Relationship Directory](https://raw.githubusercontent.com/vardansharma2912-dotcom/freelancer-proposal-tracker/3b949a15993e5fbcf24bbbe8fa9d9681bc13e33f/assets/screenshots/clients.png)
 
 ---
 
 ### 2.4 Interactive Deadline & Follow-up Calendar
 *Visual month grid with color-coded date badges for proposal submission deadlines, client meetings, and touchpoints.*
-![Interactive Calendar](assets/screenshots/calendar.png)
+![Interactive Calendar](https://raw.githubusercontent.com/vardansharma2912-dotcom/freelancer-proposal-tracker/3b949a15993e5fbcf24bbbe8fa9d9681bc13e33f/assets/screenshots/calendar.png)
 
 ---
 
 ### 2.5 Financial Intelligence & Channel Analytics
 *Win/loss distribution, platform ROI comparisons, deal size projections, and client lifetime revenue breakdown.*
-![Financial Intelligence & Channel Analytics](assets/screenshots/analytics.png)
+![Financial Intelligence & Channel Analytics](https://raw.githubusercontent.com/vardansharma2912-dotcom/freelancer-proposal-tracker/3b949a15993e5fbcf24bbbe8fa9d9681bc13e33f/assets/screenshots/analytics.png)
 
 ---
 
@@ -130,7 +130,7 @@ All screenshots below illustrate **ProposalFlow** populated with realistic demon
 
 ## 4. Software Architecture & Data Flow
 
-```
+`
                       ┌────────────────────────────────────────┐
                       │          index.html (Single Page)      │
                       │  Semantic HTML5 Layout & App Shell     │
@@ -139,35 +139,21 @@ All screenshots below illustrate **ProposalFlow** populated with realistic demon
                  ┌───────────────────────┴───────────────────────┐
                  ▼                                               ▼
      ┌───────────────────────┐                       ┌───────────────────────┐
-     │      CSS System       │                       │   JavaScript Engine   │
-     │  - style.css          │                       │   (ES6 Modular Class) │
-     │  - components.css     │                       └───────────┬───────────┘
-     │  - responsive.css     │                                   │
-     └───────────────────────┘                                   ▼
-                                                     ┌───────────────────────┐
-                                                     │   js/app.js (Router)  │
-                                                     │   Controller & Shell  │
+     │       style.css       │                       │        app.js         │
+     │  Consolidated CSS     │                       │  Consolidated Engine  │
+     │  - Design Tokens      │                       │  - Storage & Profile  │
+     │  - UI Components      │                       │  - Dashboard & Charts │
+     │  - Fluid Responsive   │                       │  - Kanban & CRM       │
+     └───────────────────────┘                       │  - Calendar & Notes   │
+                                                     │  - App Controller     │
                                                      └───────────┬───────────┘
                                                                  │
-       ┌───────────────────────────┬─────────────────────────────┼────────────────────────────┐
-       ▼                           ▼                             ▼                            ▼
-┌──────────────┐          ┌────────────────┐            ┌────────────────┐           ┌─────────────────┐
-│ js/dashboard │          │  js/proposals  │            │   js/clients   │           │  js/calendar    │
-│  & analytics │          │ (Kanban + List)│            │      (CRM)     │           │  & followups    │
-└──────┬───────┘          └────────┬───────┘            └────────┬───────┘           └────────┬────────┘
-       │                           │                             │                            │
-       └───────────────────────────┴──────────────┬──────────────┴────────────────────────────┘
-                                                  ▼
-                                      ┌──────────────────────┐
-                                      │    js/storage.js     │
-                                      │  CRUD & State Store  │
-                                      └──────────┬───────────┘
-                                                 ▼
-                                      ┌──────────────────────┐
-                                      │ Browser localStorage │
-                                      │  (100% Client-Side)  │
-                                      └──────────────────────┘
-```
+                                                                 ▼
+                                                     ┌───────────────────────┐
+                                                     │ Browser localStorage  │
+                                                     │  (100% Client-Side)   │
+                                                     └───────────────────────┘
+`
 
 ---
 
@@ -219,35 +205,15 @@ The application utilizes fluid CSS techniques (`clamp()`, CSS Grid, Flexbox with
 
 ## 7. Repository File Structure
 
-The project adheres to a clean, minimal codebase containing **strictly HTML, CSS, JavaScript, assets, and documentation**:
+The project has been streamlined into **exactly one clean file per file type**, with zero extraneous folders:
 
-```
+`
 freelancer-proposal-tracker/
 ├── index.html                   # Master single-page application document
-├── README.md                    # Comprehensive documentation and report
-├── assets/
-│   └── screenshots/             # High-resolution application demo captures
-│       ├── dashboard.png        # Executive Dashboard & Chart.js visualizations
-│       ├── kanban.png           # Proposals Kanban Pipeline view
-│       ├── clients.png          # Client Directory (CRM) view
-│       ├── calendar.png         # Deadline & Touchpoints Calendar
-│       └── analytics.png        # Financial Intelligence & Channel ROI
-├── css/
-│   ├── style.css                # Global CSS variables, reset, typography & themes
-│   ├── components.css           # UI components: buttons, cards, modals, tables, toasts
-│   └── responsive.css           # Responsive breakpoints, media queries, mobile drawer
-└── js/
-    ├── app.js                   # Application coordinator, onboarding flow & routing
-    ├── storage.js               # LocalStorage controller, demo seeder & CSV/JSON export
-    ├── dashboard.js             # Dashboard controller & Chart.js configuration
-    ├── proposals.js             # Proposal CRUD controller & Drag-and-Drop Kanban
-    ├── opportunities.js         # Opportunity list directory & filtering engine
-    ├── clients.js               # Client CRM controller & relationship manager
-    ├── followups.js             # Follow-up reminders & touchpoint tracker
-    ├── calendar.js              # Interactive month grid calendar engine
-    ├── notes.js                 # Tagged notes & document manager
-    └── analytics.js             # Financial ROI & performance analytics engine
-```
+├── style.css                    # Consolidated styles (design tokens, components, responsive)
+├── app.js                       # Consolidated JavaScript (storage, modules, router, logic)
+└── README.md                    # Project documentation, live demo links & report
+`
 
 ---
 
